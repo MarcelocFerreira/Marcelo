@@ -147,6 +147,14 @@
             font-size: 1.8em;
         }
 
+        .card h3 {
+            color: #667eea;
+            margin: 25px 0 15px 0;
+            font-size: 1.3em;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -211,6 +219,11 @@
             font-size: 0.9em;
         }
 
+        .btn-xs {
+            padding: 5px 15px;
+            font-size: 0.85em;
+        }
+
         .text-link {
             color: #667eea;
             cursor: pointer;
@@ -251,12 +264,6 @@
             background: #fff3cd;
             border-left: 4px solid #ffc107;
             color: #856404;
-        }
-
-        .alert-danger {
-            background: #f8d7da;
-            border-left: 4px solid #dc3545;
-            color: #721c24;
         }
 
         /* Tournament List */
@@ -390,6 +397,125 @@
             font-size: 1.5em;
             margin-bottom: 10px;
             color: #333;
+            border: none;
+        }
+
+        /* Players Management */
+        .players-container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .player-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .player-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .availability-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .availability-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 6px;
+        }
+
+        .availability-item input[type="checkbox"] {
+            width: auto;
+        }
+
+        .time-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .time-inputs input {
+            padding: 8px;
+            font-size: 0.9em;
+        }
+
+        .category-manager {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .category-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .category-tag {
+            background: #667eea;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-tag button {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+        }
+
+        .category-tag button:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        .add-category-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .add-category-form input {
+            flex: 1;
+        }
+
+        .hidden {
+            display: none !important;
         }
 
         @media (max-width: 768px) {
@@ -414,10 +540,14 @@
                 width: 100%;
                 justify-content: space-between;
             }
-        }
 
-        .hidden {
-            display: none !important;
+            .availability-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .time-inputs {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -537,16 +667,34 @@
                         </select>
                     </div>
 
+                    <!-- Custom Categories -->
                     <div class="form-group">
-                        <label>Categoria *</label>
-                        <select id="tournamentCategory" required>
-                            <option value="">Selecione...</option>
-                            <option value="Infantil">Infantil</option>
-                            <option value="Juvenil">Juvenil</option>
-                            <option value="Adulto">Adulto</option>
-                            <option value="Master">Master</option>
-                            <option value="Misto">Misto</option>
-                        </select>
+                        <label>Categorias do Torneio</label>
+                        <div class="category-manager">
+                            <div><strong>Categorias Disponíveis:</strong></div>
+                            <div class="category-tags" id="categoryTags">
+                                <span class="category-tag">
+                                    Infantil
+                                    <button type="button" onclick="removeCategory('Infantil')" title="Remover">×</button>
+                                </span>
+                                <span class="category-tag">
+                                    Juvenil
+                                    <button type="button" onclick="removeCategory('Juvenil')" title="Remover">×</button>
+                                </span>
+                                <span class="category-tag">
+                                    Adulto
+                                    <button type="button" onclick="removeCategory('Adulto')" title="Remover">×</button>
+                                </span>
+                                <span class="category-tag">
+                                    Master
+                                    <button type="button" onclick="removeCategory('Master')" title="Remover">×</button>
+                                </span>
+                            </div>
+                            <div class="add-category-form">
+                                <input type="text" id="newCategoryInput" placeholder="Digite nova categoria">
+                                <button type="button" class="btn btn-sm" onclick="addCategory()">➕ Adicionar</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -593,7 +741,18 @@
                         <textarea id="tournamentNotes" rows="4" placeholder="Informações adicionais sobre o torneio..."></textarea>
                     </div>
 
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <!-- Players Section -->
+                    <h3>👥 Jogadores</h3>
+                    <div class="alert alert-info">
+                        Adicione os jogadores que participarão do torneio. Para cada jogador, informe nome, categoria e disponibilidade de horários.
+                    </div>
+
+                    <div class="players-container">
+                        <div id="playersList"></div>
+                        <button type="button" class="btn btn-success" onclick="addPlayer()">➕ Adicionar Jogador</button>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 30px;">
                         <button type="submit" class="btn">🎾 Criar Torneio</button>
                         <button type="button" class="btn btn-secondary" onclick="showTab('myTournaments')">Cancelar</button>
                     </div>
@@ -650,10 +809,23 @@
         </div>
     </div>
 
-    <!-- Tournament Detail Modal (simplified for demo) -->
-    <div id="tournamentDetail" class="hidden"></div>
-
     <script>
+        // ==================== GLOBAL STATE ====================
+
+        let categories = ['Infantil', 'Juvenil', 'Adulto', 'Master'];
+        let playerCounter = 0;
+        let players = [];
+
+        const daysOfWeek = [
+            {id: 'monday', label: 'Segunda'},
+            {id: 'tuesday', label: 'Terça'},
+            {id: 'wednesday', label: 'Quarta'},
+            {id: 'thursday', label: 'Quinta'},
+            {id: 'friday', label: 'Sexta'},
+            {id: 'saturday', label: 'Sábado'},
+            {id: 'sunday', label: 'Domingo'}
+        ];
+
         // ==================== DATA MANAGEMENT ====================
 
         class StorageManager {
@@ -738,7 +910,6 @@
             const password = document.getElementById('registerPassword').value;
             const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
 
-            // Validations
             if (password !== passwordConfirm) {
                 alert('❌ As senhas não coincidem!');
                 return;
@@ -746,13 +917,11 @@
 
             const users = StorageManager.getUsers();
 
-            // Check if email already exists
             if (users.find(u => u.email === email)) {
                 alert('❌ Este email já está cadastrado!');
                 return;
             }
 
-            // Create new user
             const newUser = {
                 id: 'user_' + Date.now(),
                 name,
@@ -769,7 +938,6 @@
             alert('✅ Conta criada com sucesso! Faça login para continuar.');
             showLogin();
 
-            // Clear form
             document.getElementById('registerForm').querySelector('form').reset();
         }
 
@@ -792,11 +960,9 @@
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
 
-            // Update header with user info
             document.getElementById('userName').textContent = user.name;
             document.getElementById('userEmail').textContent = user.email;
 
-            // Load tournaments
             loadTournaments();
             loadProfile();
             updateStats();
@@ -823,15 +989,195 @@
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
 
-            // Reload data when switching tabs
             if (tabName === 'myTournaments') {
                 loadTournaments();
             } else if (tabName === 'profile') {
                 updateStats();
+            } else if (tabName === 'createTournament') {
+                resetForm();
             }
         }
 
+        // ==================== CATEGORIES ====================
+
+        function renderCategories() {
+            const container = document.getElementById('categoryTags');
+            container.innerHTML = categories.map(cat => `
+                <span class="category-tag">
+                    ${cat}
+                    <button type="button" onclick="removeCategory('${cat}')" title="Remover">×</button>
+                </span>
+            `).join('');
+        }
+
+        function addCategory() {
+            const input = document.getElementById('newCategoryInput');
+            const newCategory = input.value.trim();
+
+            if (!newCategory) {
+                alert('Digite um nome para a categoria!');
+                return;
+            }
+
+            if (categories.includes(newCategory)) {
+                alert('Esta categoria já existe!');
+                return;
+            }
+
+            categories.push(newCategory);
+            renderCategories();
+            input.value = '';
+        }
+
+        function removeCategory(category) {
+            if (confirm(`Remover categoria "${category}"?`)) {
+                categories = categories.filter(c => c !== category);
+                renderCategories();
+            }
+        }
+
+        // ==================== PLAYERS ====================
+
+        function addPlayer() {
+            const playerId = playerCounter++;
+            const player = {
+                id: playerId,
+                name: '',
+                category: '',
+                availability: []
+            };
+
+            players.push(player);
+            renderPlayers();
+        }
+
+        function removePlayer(playerId) {
+            players = players.filter(p => p.id !== playerId);
+            renderPlayers();
+        }
+
+        function renderPlayers() {
+            const container = document.getElementById('playersList');
+
+            if (players.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center;">Nenhum jogador adicionado ainda.</p>';
+                return;
+            }
+
+            container.innerHTML = players.map(player => `
+                <div class="player-item" id="player-${player.id}">
+                    <div class="player-header">
+                        <div class="player-name">Jogador ${player.id + 1}</div>
+                        <button type="button" class="btn btn-danger btn-xs" onclick="removePlayer(${player.id})">
+                            🗑️ Remover
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nome Completo *</label>
+                        <input type="text"
+                               id="playerName${player.id}"
+                               placeholder="Ex: João Silva"
+                               value="${player.name}"
+                               onchange="updatePlayerData(${player.id})"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Categoria *</label>
+                        <select id="playerCategory${player.id}"
+                                onchange="updatePlayerData(${player.id})"
+                                required>
+                            <option value="">Selecione...</option>
+                            ${categories.map(cat => `
+                                <option value="${cat}" ${player.category === cat ? 'selected' : ''}>
+                                    ${cat}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Disponibilidade de Horários</label>
+                        <div class="alert alert-info" style="font-size: 0.9em; padding: 10px;">
+                            Marque os dias e horários em que o jogador está disponível para jogar.
+                        </div>
+                        <div class="availability-grid">
+                            ${daysOfWeek.map(day => `
+                                <div class="availability-item">
+                                    <input type="checkbox"
+                                           id="player${player.id}_${day.id}"
+                                           onchange="toggleDayAvailability(${player.id}, '${day.id}')">
+                                    <label for="player${player.id}_${day.id}" style="margin: 0; cursor: pointer;">
+                                        ${day.label}
+                                    </label>
+                                </div>
+                                <div id="player${player.id}_${day.id}_times" class="hidden">
+                                    <div class="time-inputs">
+                                        <input type="time"
+                                               id="player${player.id}_${day.id}_start"
+                                               placeholder="Início"
+                                               onchange="updatePlayerData(${player.id})">
+                                        <input type="time"
+                                               id="player${player.id}_${day.id}_end"
+                                               placeholder="Fim"
+                                               onchange="updatePlayerData(${player.id})">
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleDayAvailability(playerId, dayId) {
+            const checkbox = document.getElementById(`player${playerId}_${dayId}`);
+            const timesDiv = document.getElementById(`player${playerId}_${dayId}_times`);
+
+            if (checkbox.checked) {
+                timesDiv.classList.remove('hidden');
+            } else {
+                timesDiv.classList.add('hidden');
+            }
+
+            updatePlayerData(playerId);
+        }
+
+        function updatePlayerData(playerId) {
+            const player = players.find(p => p.id === playerId);
+            if (!player) return;
+
+            player.name = document.getElementById(`playerName${playerId}`).value;
+            player.category = document.getElementById(`playerCategory${playerId}`).value;
+
+            player.availability = [];
+
+            daysOfWeek.forEach(day => {
+                const checkbox = document.getElementById(`player${playerId}_${day.id}`);
+                if (checkbox && checkbox.checked) {
+                    const startInput = document.getElementById(`player${playerId}_${day.id}_start`);
+                    const endInput = document.getElementById(`player${playerId}_${day.id}_end`);
+
+                    player.availability.push({
+                        day: day.id,
+                        dayLabel: day.label,
+                        startTime: startInput.value || '08:00',
+                        endTime: endInput.value || '18:00'
+                    });
+                }
+            });
+        }
+
         // ==================== TOURNAMENTS ====================
+
+        function resetForm() {
+            categories = ['Infantil', 'Juvenil', 'Adulto', 'Master'];
+            playerCounter = 0;
+            players = [];
+            renderCategories();
+            renderPlayers();
+        }
 
         function loadTournaments() {
             const user = StorageManager.getCurrentUser();
@@ -864,6 +1210,7 @@
         function createTournamentCard(tournament) {
             const startDate = new Date(tournament.startDate).toLocaleDateString('pt-BR');
             const endDate = new Date(tournament.endDate).toLocaleDateString('pt-BR');
+            const playerCount = tournament.players ? tournament.players.length : 0;
 
             return `
                 <div class="tournament-card">
@@ -878,7 +1225,10 @@
                         📅 ${startDate} - ${endDate}
                     </div>
                     <div class="tournament-info">
-                        🏆 ${tournament.format} • ${tournament.category}
+                        🏆 ${tournament.format}
+                    </div>
+                    <div class="tournament-info">
+                        👥 ${playerCount} jogador${playerCount !== 1 ? 'es' : ''}
                     </div>
                     <div class="tournament-info">
                         ⏱️ ${tournament.duration}min por jogo
@@ -891,9 +1241,6 @@
                     <div class="tournament-actions">
                         <button class="btn btn-sm" onclick="viewTournament('${tournament.id}')">
                             👁️ Ver Detalhes
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="editTournament('${tournament.id}')">
-                            ✏️ Editar
                         </button>
                         <button class="btn btn-danger btn-sm" onclick="deleteTournament('${tournament.id}')">
                             🗑️ Excluir
@@ -919,11 +1266,23 @@
             const user = StorageManager.getCurrentUser();
             if (!user) return;
 
+            // Validate players
+            for (let player of players) {
+                if (!player.name) {
+                    alert(`Por favor, preencha o nome do Jogador ${player.id + 1}`);
+                    return;
+                }
+                if (!player.category) {
+                    alert(`Por favor, selecione a categoria do ${player.name}`);
+                    return;
+                }
+            }
+
             const tournament = {
                 id: 'tournament_' + Date.now(),
                 name: document.getElementById('tournamentName').value,
                 sport: document.getElementById('tournamentSport').value,
-                category: document.getElementById('tournamentCategory').value,
+                categories: [...categories],
                 format: document.getElementById('tournamentFormat').value,
                 startDate: document.getElementById('tournamentStartDate').value,
                 endDate: document.getElementById('tournamentEndDate').value,
@@ -932,6 +1291,7 @@
                 location: document.getElementById('tournamentLocation').value,
                 notes: document.getElementById('tournamentNotes').value,
                 status: 'Rascunho',
+                players: [...players],
                 createdAt: new Date().toISOString(),
                 courts: [],
                 teams: [],
@@ -942,12 +1302,10 @@
             tournaments.push(tournament);
             StorageManager.saveTournaments(user.id, tournaments);
 
-            alert('✅ Torneio criado com sucesso!');
+            alert(`✅ Torneio criado com sucesso!\n\n📊 ${players.length} jogador${players.length !== 1 ? 'es' : ''} cadastrado${players.length !== 1 ? 's' : ''}!`);
 
-            // Clear form
             event.target.reset();
-
-            // Go to tournaments list
+            resetForm();
             showTab('myTournaments');
         }
 
@@ -958,20 +1316,21 @@
 
             if (!tournament) return;
 
+            let playersInfo = '';
+            if (tournament.players && tournament.players.length > 0) {
+                playersInfo = '\n\n👥 JOGADORES:\n' +
+                    tournament.players.map((p, i) => {
+                        const availDays = p.availability.map(a => a.dayLabel).join(', ');
+                        return `${i + 1}. ${p.name} (${p.category})\n   Disponível: ${availDays || 'Não informado'}`;
+                    }).join('\n\n');
+            }
+
             alert(`🎾 ${tournament.name}\n\n` +
                   `📊 Status: ${tournament.status}\n` +
                   `🏆 Formato: ${tournament.format}\n` +
-                  `📅 Período: ${new Date(tournament.startDate).toLocaleDateString('pt-BR')} - ${new Date(tournament.endDate).toLocaleDateString('pt-BR')}\n\n` +
-                  `Em breve você poderá:\n` +
-                  `• Gerenciar quadras\n` +
-                  `• Cadastrar equipes\n` +
-                  `• Gerar agenda automática\n` +
-                  `• Visualizar chaveamento\n` +
-                  `• E muito mais!`);
-        }
-
-        function editTournament(tournamentId) {
-            alert('🚧 Funcionalidade de edição será implementada em breve!');
+                  `📅 Período: ${new Date(tournament.startDate).toLocaleDateString('pt-BR')} - ${new Date(tournament.endDate).toLocaleDateString('pt-BR')}\n` +
+                  `🎯 Categorias: ${tournament.categories.join(', ')}` +
+                  playersInfo);
         }
 
         function deleteTournament(tournamentId) {
@@ -1012,8 +1371,6 @@
             user.organization = document.getElementById('profileOrganization').value;
 
             StorageManager.updateUser(user);
-
-            // Update header
             document.getElementById('userName').textContent = user.name;
 
             alert('✅ Perfil atualizado com sucesso!');
@@ -1045,15 +1402,16 @@
                 showAuthScreen();
             }
 
-            // Set minimum date for tournament creation to today
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('tournamentStartDate').setAttribute('min', today);
             document.getElementById('tournamentEndDate').setAttribute('min', today);
 
-            // Update end date minimum when start date changes
             document.getElementById('tournamentStartDate').addEventListener('change', function() {
                 document.getElementById('tournamentEndDate').setAttribute('min', this.value);
             });
+
+            renderCategories();
+            renderPlayers();
         });
     </script>
 </body>
