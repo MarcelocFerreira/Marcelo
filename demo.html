@@ -716,6 +716,69 @@
             border-bottom: none;
         }
 
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 2em;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #333;
+        }
+
         @media (max-width: 768px) {
             .tournament-grid {
                 grid-template-columns: 1fr;
@@ -1040,6 +1103,43 @@
 
             <!-- Standings Tab -->
             <div id="tournamentStandings" class="tournament-tab-content" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- Modal Add Player -->
+    <div id="addPlayerModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">➕ Adicionar Jogador</div>
+                <button class="modal-close" onclick="closeAddPlayerModal()">×</button>
+            </div>
+
+            <form onsubmit="addPlayerToTournament(event)">
+                <div class="form-group">
+                    <label>Nome Completo *</label>
+                    <input type="text" id="modalPlayerName" placeholder="Ex: João Silva" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Categoria *</label>
+                    <select id="modalPlayerCategory" required>
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Disponibilidade de Horários</label>
+                    <div class="alert alert-info" style="font-size: 0.9em; padding: 10px;">
+                        Marque os dias e horários em que o jogador está disponível para jogar.
+                    </div>
+                    <div id="modalPlayerAvailability"></div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">✅ Adicionar Jogador</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAddPlayerModal()">Cancelar</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1675,13 +1775,23 @@
                     </div>
 
                     <h3>Jogadores Inscritos</h3>
+                    <div style="margin-bottom: 15px;">
+                        <button class="btn btn-success" onclick="showAddPlayerModal()">➕ Adicionar Jogador</button>
+                        ${currentTournament.groups?.length > 0 || currentTournament.bracket
+                            ? '<span class="alert alert-warning" style="display: inline-block; margin-left: 10px; padding: 8px 15px;">⚠️ Chaveamento já gerado. Ao adicionar jogadores, será necessário gerar novamente.</span>'
+                            : ''
+                        }
+                    </div>
                     <div class="tournament-info" style="margin-bottom: 15px;">
                         ${currentTournament.players && currentTournament.players.length > 0
                             ? currentTournament.players.map((p, i) => {
                                 const availDays = p.availability.map(a => a.dayLabel).join(', ');
-                                return `<div style="padding: 10px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px;">
-                                    <strong>${i + 1}. ${p.name}</strong> (${p.category})<br>
-                                    <small>Disponível: ${availDays || 'Não informado'}</small>
+                                return `<div style="padding: 10px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <strong>${i + 1}. ${p.name}</strong> (${p.category})<br>
+                                        <small>Disponível: ${availDays || 'Não informado'}</small>
+                                    </div>
+                                    <button class="btn btn-danger btn-xs" onclick="removePlayerFromTournament(${p.id})">🗑️ Remover</button>
                                 </div>`;
                             }).join('')
                             : '<p>Nenhum jogador cadastrado</p>'
@@ -1694,6 +1804,138 @@
                     ` : ''}
                 </div>
             `;
+        }
+
+        // ==================== PLAYER MANAGEMENT IN TOURNAMENT ====================
+
+        function showAddPlayerModal() {
+            // Populate categories
+            const categorySelect = document.getElementById('modalPlayerCategory');
+            categorySelect.innerHTML = '<option value="">Selecione...</option>' +
+                currentTournament.categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+            // Create availability checkboxes
+            const availContainer = document.getElementById('modalPlayerAvailability');
+            availContainer.innerHTML = daysOfWeek.map(day => `
+                <div class="availability-item">
+                    <input type="checkbox" id="modalPlayer_${day.id}" onchange="toggleModalDayAvailability('${day.id}')">
+                    <label for="modalPlayer_${day.id}" style="margin: 0; cursor: pointer;">${day.label}</label>
+                </div>
+                <div id="modalPlayer_${day.id}_times" class="hidden">
+                    <div class="time-inputs">
+                        <input type="time" id="modalPlayer_${day.id}_start" value="08:00">
+                        <input type="time" id="modalPlayer_${day.id}_end" value="18:00">
+                    </div>
+                </div>
+            `).join('');
+
+            // Show modal
+            document.getElementById('addPlayerModal').classList.add('active');
+        }
+
+        function closeAddPlayerModal() {
+            document.getElementById('addPlayerModal').classList.remove('active');
+            document.getElementById('modalPlayerName').value = '';
+            document.getElementById('modalPlayerCategory').value = '';
+        }
+
+        function toggleModalDayAvailability(dayId) {
+            const checkbox = document.getElementById(`modalPlayer_${dayId}`);
+            const timesDiv = document.getElementById(`modalPlayer_${dayId}_times`);
+
+            if (checkbox.checked) {
+                timesDiv.classList.remove('hidden');
+            } else {
+                timesDiv.classList.add('hidden');
+            }
+        }
+
+        function addPlayerToTournament(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('modalPlayerName').value;
+            const category = document.getElementById('modalPlayerCategory').value;
+
+            if (!name || !category) {
+                alert('Por favor, preencha todos os campos obrigatórios!');
+                return;
+            }
+
+            // Get availability
+            const availability = [];
+            daysOfWeek.forEach(day => {
+                const checkbox = document.getElementById(`modalPlayer_${day.id}`);
+                if (checkbox && checkbox.checked) {
+                    const startTime = document.getElementById(`modalPlayer_${day.id}_start`).value;
+                    const endTime = document.getElementById(`modalPlayer_${day.id}_end`).value;
+
+                    availability.push({
+                        day: day.id,
+                        dayLabel: day.label,
+                        startTime: startTime || '08:00',
+                        endTime: endTime || '18:00'
+                    });
+                }
+            });
+
+            // Create new player
+            const newPlayer = {
+                id: Date.now(), // Use timestamp as unique ID
+                name,
+                category,
+                availability
+            };
+
+            // Add to tournament
+            if (!currentTournament.players) {
+                currentTournament.players = [];
+            }
+            currentTournament.players.push(newPlayer);
+
+            // Save tournament
+            saveTournament();
+
+            // Close modal
+            closeAddPlayerModal();
+
+            // Refresh view
+            renderTournamentOverview();
+
+            alert(`✅ Jogador ${name} adicionado com sucesso!`);
+        }
+
+        function removePlayerFromTournament(playerId) {
+            const player = currentTournament.players.find(p => p.id === playerId);
+
+            if (!player) return;
+
+            if (!confirm(`Tem certeza que deseja remover ${player.name}?`)) {
+                return;
+            }
+
+            // Check if player is in bracket/groups
+            if (currentTournament.groups?.length > 0 || currentTournament.bracket) {
+                if (!confirm('⚠️ ATENÇÃO: Este jogador está no chaveamento. Ao removê-lo, o chaveamento e agenda serão limpos. Deseja continuar?')) {
+                    return;
+                }
+
+                // Clear bracket and schedule
+                currentTournament.groups = [];
+                currentTournament.bracket = null;
+                currentTournament.matches = [];
+                currentTournament.conflicts = [];
+            }
+
+            // Remove player
+            currentTournament.players = currentTournament.players.filter(p => p.id !== playerId);
+
+            // Save tournament
+            saveTournament();
+
+            // Refresh view
+            renderTournamentOverview();
+
+            alert(`✅ Jogador ${player.name} removido com sucesso!`);
         }
 
         // ==================== COURTS MANAGEMENT ====================
@@ -2712,6 +2954,13 @@
 
             renderCategories();
             renderPlayers();
+
+            // Close modal when clicking outside
+            document.getElementById('addPlayerModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAddPlayerModal();
+                }
+            });
         });
     </script>
 </body>
