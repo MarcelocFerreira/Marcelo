@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SportSchedule - Sistema Completo de Agendamento</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .landing {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .hero {
+            background: white;
+            padding: 60px 40px;
+            border-radius: 30px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+            max-width: 800px;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            color: #666;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .feature {
+            background: #f5f5f5;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: left;
+        }
+
+        .feature-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        .feature-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .feature-desc {
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            gap: 30px;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            max-width: 800px;
+            margin-top: 40px;
+        }
+
+        .stat {
+            text-align: center;
+            color: white;
+        }
+
+        .stat-number {
+            font-size: 3em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .demo-info {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 600px;
+            margin-top: 40px;
+        }
+
+        .demo-info h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .demo-info ul {
+            text-align: left;
+            list-style: none;
+            padding: 0;
+        }
+
+        .demo-info li {
+            padding: 10px 0;
+            color: #333;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .demo-info li:last-child {
+            border-bottom: none;
+        }
+
+        .demo-info li::before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .subtitle {
+                font-size: 1.1em;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="landing">
+        <div class="hero">
+            <div class="logo">🎾</div>
+            <h1>SportSchedule</h1>
+            <p class="subtitle">
+                Sistema Completo de Agendamento de Torneios Esportivos<br>
+                Com Inteligência Artificial para Organizar Seus Jogos
+            </p>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">👥</div>
+                    <div class="feature-title">Gestão de Jogadores</div>
+                    <div class="feature-desc">Cadastre jogadores com disponibilidade de horários por dia da semana</div>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">🏟️</div>
+                    <div class="feature-title">Quadras Inteligentes</div>
+                    <div class="feature-desc">Configure quadras e horários disponíveis para otimizar uso</div>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">🤖</div>
+                    <div class="feature-title">Agendamento Automático</div>
+                    <div class="feature-desc">IA agenda todos os jogos respeitando disponibilidades</div>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">🏆</div>
+                    <div class="feature-title">Chaveamento Flexível</div>
+                    <div class="feature-desc">Grupos, eliminatórias ou misto - você escolhe</div>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">⚠️</div>
+                    <div class="feature-title">Gestão de Conflitos</div>
+                    <div class="feature-desc">Detecta problemas e sugere as melhores soluções</div>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">Classificações Live</div>
+                    <div class="feature-desc">Tabelas e resultados atualizados em tempo real</div>
+                </div>
+            </div>
+
+            <div class="cta-buttons">
+                <a href="demo.html" class="btn">🚀 Acessar Sistema Completo</a>
+                <button class="btn btn-secondary" onclick="showDemo()">📖 Ver Funcionalidades</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Automático</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">6+</div>
+                <div class="stat-label">Esportes</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">∞</div>
+                <div class="stat-label">Jogadores</div>
+            </div>
+        </div>
+
+        <div class="demo-info" id="demoInfo" style="display: none;">
+            <h3>✨ Funcionalidades Implementadas</h3>
+            <ul>
+                <li><strong>Login/Registro:</strong> Sistema de autenticação com múltiplos usuários</li>
+                <li><strong>Categorias Customizadas:</strong> Crie suas próprias categorias (Infantil, Sub-15, etc)</li>
+                <li><strong>Cadastro de Jogadores:</strong> Nome, categoria e disponibilidade de horários</li>
+                <li><strong>Gestão de Quadras:</strong> Adicione quadras com horários disponíveis</li>
+                <li><strong>Chaveamento Automático:</strong> Grupos, eliminatórias ou misto</li>
+                <li><strong>Agendamento Inteligente:</strong> IA otimiza uso de quadras e horários</li>
+                <li><strong>Detecção de Conflitos:</strong> Identifica problemas automaticamente</li>
+                <li><strong>Sugestões Smart:</strong> Top 5 alternativas para cada conflito</li>
+                <li><strong>Visualização de Agenda:</strong> Calendário completo dos jogos</li>
+                <li><strong>Registro de Resultados:</strong> Acompanhe placares em tempo real</li>
+                <li><strong>Tabelas de Classificação:</strong> Rankings automáticos por grupo</li>
+                <li><strong>Dados Persistentes:</strong> Tudo salvo no navegador</li>
+            </ul>
+            <div style="margin-top: 20px; text-align: center;">
+                <a href="demo.html" class="btn">Começar Agora →</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showDemo() {
+            const demoInfo = document.getElementById('demoInfo');
+            if (demoInfo.style.display === 'none') {
+                demoInfo.style.display = 'block';
+                demoInfo.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                demoInfo.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

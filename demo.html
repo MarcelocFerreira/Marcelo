@@ -518,6 +518,204 @@
             display: none !important;
         }
 
+        /* Court Management */
+        .court-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .court-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        /* Bracket Visualization */
+        .bracket-container {
+            overflow-x: auto;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .bracket-round {
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 40px;
+        }
+
+        .bracket-match {
+            background: white;
+            padding: 10px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            min-width: 200px;
+        }
+
+        .bracket-team {
+            padding: 8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .bracket-team:last-child {
+            border-bottom: none;
+        }
+
+        .bracket-team.winner {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .group-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .group-card {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .group-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .group-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .group-table th {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .group-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .group-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Calendar View */
+        .calendar-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .calendar-day:hover {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .calendar-day.has-matches {
+            background: #e7f0ff;
+            border-color: #667eea;
+        }
+
+        .match-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .match-card:hover {
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .match-teams {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .match-info {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .conflict-card {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .conflict-title {
+            font-weight: 700;
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .suggestion-list {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .suggestion-item:hover {
+            background: #f5f5f5;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
         @media (max-width: 768px) {
             .tournament-grid {
                 grid-template-columns: 1fr;
@@ -630,10 +828,22 @@
             </div>
         </header>
 
-        <div class="tabs">
+        <div class="tabs" id="mainTabs">
             <button class="tab active" onclick="showTab('myTournaments')">🏆 Meus Torneios</button>
             <button class="tab" onclick="showTab('createTournament')">➕ Criar Torneio</button>
             <button class="tab" onclick="showTab('profile')">👤 Perfil</button>
+        </div>
+
+        <!-- Tournament Detail Tabs (Hidden by default) -->
+        <div class="tabs hidden" id="tournamentTabs">
+            <button class="btn btn-secondary btn-sm" onclick="closeTournamentDetail()">← Voltar</button>
+            <button class="tab active" onclick="showTournamentTab('overview')">📊 Visão Geral</button>
+            <button class="tab" onclick="showTournamentTab('courts')">🏟️ Quadras</button>
+            <button class="tab" onclick="showTournamentTab('bracket')">🏆 Chaveamento</button>
+            <button class="tab" onclick="showTournamentTab('schedule')">📅 Agenda</button>
+            <button class="tab" onclick="showTournamentTab('conflicts')">⚠️ Conflitos</button>
+            <button class="tab" onclick="showTournamentTab('results')">📊 Resultados</button>
+            <button class="tab" onclick="showTournamentTab('standings')">🏅 Classificação</button>
         </div>
 
         <!-- My Tournaments -->
@@ -807,6 +1017,30 @@
                 </div>
             </div>
         </div>
+
+        <!-- Tournament Detail Views -->
+        <div id="tournamentDetail" class="content">
+            <!-- Overview Tab -->
+            <div id="tournamentOverview" class="tournament-tab-content active"></div>
+
+            <!-- Courts Tab -->
+            <div id="tournamentCourts" class="tournament-tab-content" style="display:none;"></div>
+
+            <!-- Bracket Tab -->
+            <div id="tournamentBracket" class="tournament-tab-content" style="display:none;"></div>
+
+            <!-- Schedule Tab -->
+            <div id="tournamentSchedule" class="tournament-tab-content" style="display:none;"></div>
+
+            <!-- Conflicts Tab -->
+            <div id="tournamentConflicts" class="tournament-tab-content" style="display:none;"></div>
+
+            <!-- Results Tab -->
+            <div id="tournamentResults" class="tournament-tab-content" style="display:none;"></div>
+
+            <!-- Standings Tab -->
+            <div id="tournamentStandings" class="tournament-tab-content" style="display:none;"></div>
+        </div>
     </div>
 
     <script>
@@ -815,6 +1049,8 @@
         let categories = ['Infantil', 'Juvenil', 'Adulto', 'Master'];
         let playerCounter = 0;
         let players = [];
+        let currentTournament = null;
+        let courtCounter = 0;
 
         const daysOfWeek = [
             {id: 'monday', label: 'Segunda'},
@@ -1312,25 +1548,85 @@
         function viewTournament(tournamentId) {
             const user = StorageManager.getCurrentUser();
             const tournaments = StorageManager.getTournaments(user.id);
-            const tournament = tournaments.find(t => t.id === tournamentId);
+            currentTournament = tournaments.find(t => t.id === tournamentId);
 
-            if (!tournament) return;
+            if (!currentTournament) return;
 
-            let playersInfo = '';
-            if (tournament.players && tournament.players.length > 0) {
-                playersInfo = '\n\n👥 JOGADORES:\n' +
-                    tournament.players.map((p, i) => {
-                        const availDays = p.availability.map(a => a.dayLabel).join(', ');
-                        return `${i + 1}. ${p.name} (${p.category})\n   Disponível: ${availDays || 'Não informado'}`;
-                    }).join('\n\n');
+            // Initialize tournament data if needed
+            if (!currentTournament.courts) currentTournament.courts = [];
+            if (!currentTournament.matches) currentTournament.matches = [];
+            if (!currentTournament.groups) currentTournament.groups = [];
+            if (!currentTournament.bracket) currentTournament.bracket = null;
+            if (!currentTournament.conflicts) currentTournament.conflicts = [];
+
+            // Hide main tabs, show tournament tabs
+            document.getElementById('mainTabs').classList.add('hidden');
+            document.getElementById('tournamentTabs').classList.remove('hidden');
+
+            // Hide other content, show tournament detail
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tournamentDetail').classList.add('active');
+
+            // Show overview tab by default
+            showTournamentTab('overview');
+        }
+
+        function closeTournamentDetail() {
+            // Show main tabs, hide tournament tabs
+            document.getElementById('mainTabs').classList.remove('hidden');
+            document.getElementById('tournamentTabs').classList.add('hidden');
+
+            // Save any changes
+            saveTournament();
+
+            // Reset current tournament
+            currentTournament = null;
+
+            // Go back to my tournaments
+            showTab('myTournaments');
+        }
+
+        function showTournamentTab(tabName) {
+            // Hide all tournament tab contents
+            document.querySelectorAll('.tournament-tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+
+            // Update tab buttons
+            const tournamentTabs = document.getElementById('tournamentTabs').querySelectorAll('.tab');
+            tournamentTabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Show selected tab content
+            const contentMap = {
+                'overview': renderTournamentOverview,
+                'courts': renderTournamentCourts,
+                'bracket': renderTournamentBracket,
+                'schedule': renderTournamentSchedule,
+                'conflicts': renderTournamentConflicts,
+                'results': renderTournamentResults,
+                'standings': renderTournamentStandings
+            };
+
+            const contentId = `tournament${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`;
+            document.getElementById(contentId).style.display = 'block';
+
+            if (contentMap[tabName]) {
+                contentMap[tabName]();
             }
+        }
 
-            alert(`🎾 ${tournament.name}\n\n` +
-                  `📊 Status: ${tournament.status}\n` +
-                  `🏆 Formato: ${tournament.format}\n` +
-                  `📅 Período: ${new Date(tournament.startDate).toLocaleDateString('pt-BR')} - ${new Date(tournament.endDate).toLocaleDateString('pt-BR')}\n` +
-                  `🎯 Categorias: ${tournament.categories.join(', ')}` +
-                  playersInfo);
+        function saveTournament() {
+            if (!currentTournament) return;
+
+            const user = StorageManager.getCurrentUser();
+            const tournaments = StorageManager.getTournaments(user.id);
+            const index = tournaments.findIndex(t => t.id === currentTournament.id);
+
+            if (index !== -1) {
+                tournaments[index] = currentTournament;
+                StorageManager.saveTournaments(user.id, tournaments);
+            }
         }
 
         function deleteTournament(tournamentId) {
@@ -1346,6 +1642,1010 @@
             alert('✅ Torneio excluído com sucesso!');
             loadTournaments();
             updateStats();
+        }
+
+        // ==================== TOURNAMENT DETAIL VIEWS ====================
+
+        function renderTournamentOverview() {
+            const container = document.getElementById('tournamentOverview');
+            const startDate = new Date(currentTournament.startDate).toLocaleDateString('pt-BR');
+            const endDate = new Date(currentTournament.endDate).toLocaleDateString('pt-BR');
+
+            container.innerHTML = `
+                <div class="card">
+                    <h2>${currentTournament.name}</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                        <div>
+                            <h3>Informações Básicas</h3>
+                            <div class="tournament-info">📊 Status: <strong>${currentTournament.status}</strong></div>
+                            <div class="tournament-info">🏆 Formato: <strong>${currentTournament.format}</strong></div>
+                            <div class="tournament-info">🎾 Esporte: <strong>${currentTournament.sport}</strong></div>
+                            <div class="tournament-info">📅 Período: <strong>${startDate} - ${endDate}</strong></div>
+                            <div class="tournament-info">⏱️ Duração: <strong>${currentTournament.duration} minutos</strong></div>
+                            ${currentTournament.location ? `<div class="tournament-info">📍 Local: <strong>${currentTournament.location}</strong></div>` : ''}
+                        </div>
+                        <div>
+                            <h3>Estatísticas</h3>
+                            <div class="tournament-info">👥 Jogadores: <strong>${currentTournament.players?.length || 0}</strong></div>
+                            <div class="tournament-info">🏟️ Quadras: <strong>${currentTournament.courts?.length || 0}</strong></div>
+                            <div class="tournament-info">🎯 Jogos Agendados: <strong>${currentTournament.matches?.length || 0}</strong></div>
+                            <div class="tournament-info">⚠️ Conflitos: <strong>${currentTournament.conflicts?.length || 0}</strong></div>
+                            <div class="tournament-info">🎯 Categorias: <strong>${currentTournament.categories?.join(', ')}</strong></div>
+                        </div>
+                    </div>
+
+                    <h3>Jogadores Inscritos</h3>
+                    <div class="tournament-info" style="margin-bottom: 15px;">
+                        ${currentTournament.players && currentTournament.players.length > 0
+                            ? currentTournament.players.map((p, i) => {
+                                const availDays = p.availability.map(a => a.dayLabel).join(', ');
+                                return `<div style="padding: 10px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px;">
+                                    <strong>${i + 1}. ${p.name}</strong> (${p.category})<br>
+                                    <small>Disponível: ${availDays || 'Não informado'}</small>
+                                </div>`;
+                            }).join('')
+                            : '<p>Nenhum jogador cadastrado</p>'
+                        }
+                    </div>
+
+                    ${currentTournament.notes ? `
+                        <h3>Observações</h3>
+                        <div class="alert alert-info">${currentTournament.notes}</div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // ==================== COURTS MANAGEMENT ====================
+
+        function renderTournamentCourts() {
+            const container = document.getElementById('tournamentCourts');
+
+            container.innerHTML = `
+                <div class="card">
+                    <h2>🏟️ Gestão de Quadras</h2>
+                    <div class="alert alert-info">
+                        Configure as quadras disponíveis e seus horários de funcionamento. Isso será usado no agendamento automático dos jogos.
+                    </div>
+
+                    <div id="courtsList"></div>
+
+                    <button class="btn btn-success" onclick="addCourt()">➕ Adicionar Quadra</button>
+                </div>
+            `;
+
+            renderCourts();
+        }
+
+        function renderCourts() {
+            const container = document.getElementById('courtsList');
+
+            if (!currentTournament.courts || currentTournament.courts.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>Nenhuma quadra cadastrada ainda.</p></div>';
+                return;
+            }
+
+            container.innerHTML = currentTournament.courts.map(court => `
+                <div class="court-item">
+                    <div class="court-header">
+                        <div><strong>${court.name}</strong></div>
+                        <button class="btn btn-danger btn-xs" onclick="removeCourt(${court.id})">🗑️ Remover</button>
+                    </div>
+                    <div><strong>Horários Disponíveis:</strong></div>
+                    ${court.availability.map(avail => `
+                        <div style="padding: 5px; background: #f9f9f9; border-radius: 4px; margin: 5px 0;">
+                            ${avail.dayLabel}: ${avail.startTime} - ${avail.endTime}
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+        }
+
+        function addCourt() {
+            const courtName = prompt('Nome da quadra:', `Quadra ${currentTournament.courts.length + 1}`);
+            if (!courtName) return;
+
+            const availability = [];
+
+            // Ask for each day
+            for (const day of daysOfWeek) {
+                if (confirm(`A quadra está disponível na ${day.label}?`)) {
+                    const startTime = prompt(`${day.label} - Horário de início (HH:MM):`, '08:00');
+                    const endTime = prompt(`${day.label} - Horário de fim (HH:MM):`, '22:00');
+
+                    if (startTime && endTime) {
+                        availability.push({
+                            day: day.id,
+                            dayLabel: day.label,
+                            startTime,
+                            endTime
+                        });
+                    }
+                }
+            }
+
+            if (availability.length === 0) {
+                alert('É necessário configurar pelo menos um dia de disponibilidade!');
+                return;
+            }
+
+            const court = {
+                id: courtCounter++,
+                name: courtName,
+                availability
+            };
+
+            currentTournament.courts.push(court);
+            saveTournament();
+            renderCourts();
+            alert('✅ Quadra adicionada com sucesso!');
+        }
+
+        function removeCourt(courtId) {
+            if (confirm('Tem certeza que deseja remover esta quadra?')) {
+                currentTournament.courts = currentTournament.courts.filter(c => c.id !== courtId);
+                saveTournament();
+                renderCourts();
+            }
+        }
+
+        // ==================== BRACKET GENERATION ====================
+
+        function renderTournamentBracket() {
+            const container = document.getElementById('tournamentBracket');
+
+            container.innerHTML = `
+                <div class="card">
+                    <h2>🏆 Chaveamento</h2>
+                    <div class="alert alert-info">
+                        Formato: <strong>${currentTournament.format}</strong><br>
+                        Gere o chaveamento para organizar os jogos do torneio.
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn" onclick="generateBracket()">🎲 Gerar Chaveamento</button>
+                        ${currentTournament.groups?.length > 0 || currentTournament.bracket
+                            ? '<button class="btn btn-secondary" onclick="clearBracket()">🗑️ Limpar Chaveamento</button>'
+                            : ''
+                        }
+                    </div>
+
+                    <div id="bracketDisplay"></div>
+                </div>
+            `;
+
+            displayBracket();
+        }
+
+        function generateBracket() {
+            if (!currentTournament.players || currentTournament.players.length < 2) {
+                alert('❌ É necessário ter pelo menos 2 jogadores para gerar o chaveamento!');
+                return;
+            }
+
+            // Shuffle players
+            const shuffledPlayers = [...currentTournament.players].sort(() => Math.random() - 0.5);
+
+            if (currentTournament.format === 'Grupos' || currentTournament.format === 'Misto') {
+                // Generate groups
+                const groupSize = 4;
+                const numGroups = Math.ceil(shuffledPlayers.length / groupSize);
+                currentTournament.groups = [];
+
+                for (let i = 0; i < numGroups; i++) {
+                    const groupPlayers = shuffledPlayers.slice(i * groupSize, (i + 1) * groupSize);
+                    const group = {
+                        id: i,
+                        name: `Grupo ${String.fromCharCode(65 + i)}`,
+                        players: groupPlayers.map(p => ({
+                            ...p,
+                            played: 0,
+                            wins: 0,
+                            losses: 0,
+                            points: 0
+                        }))
+                    };
+                    currentTournament.groups.push(group);
+                }
+            }
+
+            if (currentTournament.format === 'Eliminatórias' || currentTournament.format === 'Misto') {
+                // Generate elimination bracket
+                const players = currentTournament.format === 'Misto'
+                    ? [] // Will be filled after group stage
+                    : shuffledPlayers;
+
+                if (currentTournament.format === 'Eliminatórias') {
+                    currentTournament.bracket = generateEliminationBracket(players);
+                }
+            }
+
+            currentTournament.status = 'Planejando';
+            saveTournament();
+            displayBracket();
+            alert('✅ Chaveamento gerado com sucesso!');
+        }
+
+        function generateEliminationBracket(players) {
+            // Round to next power of 2
+            const bracketSize = Math.pow(2, Math.ceil(Math.log2(players.length)));
+            const rounds = Math.log2(bracketSize);
+
+            const bracket = {
+                rounds: [],
+                size: bracketSize
+            };
+
+            // First round
+            const firstRound = [];
+            for (let i = 0; i < bracketSize / 2; i++) {
+                firstRound.push({
+                    id: `R1-M${i + 1}`,
+                    round: 1,
+                    player1: players[i * 2] || null,
+                    player2: players[i * 2 + 1] || null,
+                    winner: null,
+                    score: null
+                });
+            }
+            bracket.rounds.push(firstRound);
+
+            // Subsequent rounds
+            for (let r = 2; r <= rounds; r++) {
+                const roundMatches = [];
+                const prevRoundSize = bracket.rounds[r - 2].length;
+
+                for (let i = 0; i < prevRoundSize / 2; i++) {
+                    roundMatches.push({
+                        id: `R${r}-M${i + 1}`,
+                        round: r,
+                        player1: null,
+                        player2: null,
+                        winner: null,
+                        score: null
+                    });
+                }
+                bracket.rounds.push(roundMatches);
+            }
+
+            return bracket;
+        }
+
+        function displayBracket() {
+            const container = document.getElementById('bracketDisplay');
+
+            if (!currentTournament.groups && !currentTournament.bracket) {
+                container.innerHTML = '<div class="empty-state"><p>Nenhum chaveamento gerado ainda.</p></div>';
+                return;
+            }
+
+            let html = '';
+
+            // Display groups
+            if (currentTournament.groups && currentTournament.groups.length > 0) {
+                html += '<h3>Fase de Grupos</h3><div class="group-container">';
+
+                currentTournament.groups.forEach(group => {
+                    html += `
+                        <div class="group-card">
+                            <div class="group-title">${group.name}</div>
+                            <table class="group-table">
+                                <thead>
+                                    <tr>
+                                        <th>Jogador</th>
+                                        <th>PTS</th>
+                                        <th>V</th>
+                                        <th>D</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${group.players.map(p => `
+                                        <tr>
+                                            <td>${p.name}</td>
+                                            <td><strong>${p.points || 0}</strong></td>
+                                            <td>${p.wins || 0}</td>
+                                            <td>${p.losses || 0}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            // Display elimination bracket
+            if (currentTournament.bracket) {
+                html += '<h3>Chave de Eliminatórias</h3><div class="bracket-container">';
+
+                const roundNames = ['Oitavas', 'Quartas', 'Semifinal', 'Final'];
+                currentTournament.bracket.rounds.forEach((round, roundIndex) => {
+                    const roundName = roundNames[roundNames.length - currentTournament.bracket.rounds.length + roundIndex] || `Rodada ${roundIndex + 1}`;
+
+                    html += `<div class="bracket-round">`;
+                    html += `<h4>${roundName}</h4>`;
+
+                    round.forEach(match => {
+                        html += `
+                            <div class="bracket-match">
+                                <div class="bracket-team ${match.winner && match.winner.id === match.player1?.id ? 'winner' : ''}">
+                                    ${match.player1 ? match.player1.name : 'TBD'}
+                                </div>
+                                <div class="bracket-team ${match.winner && match.winner.id === match.player2?.id ? 'winner' : ''}">
+                                    ${match.player2 ? match.player2.name : 'TBD'}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `</div>`;
+                });
+
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function clearBracket() {
+            if (confirm('⚠️ Tem certeza que deseja limpar o chaveamento? Todos os resultados serão perdidos.')) {
+                currentTournament.groups = [];
+                currentTournament.bracket = null;
+                currentTournament.matches = [];
+                saveTournament();
+                displayBracket();
+            }
+        }
+
+        // ==================== AUTOMATIC SCHEDULING ====================
+
+        function renderTournamentSchedule() {
+            const container = document.getElementById('tournamentSchedule');
+
+            container.innerHTML = `
+                <div class="card">
+                    <h2>📅 Agendamento de Jogos</h2>
+                    <div class="alert alert-info">
+                        O sistema irá agendar automaticamente todos os jogos considerando:
+                        <ul>
+                            <li>Disponibilidade das quadras</li>
+                            <li>Disponibilidade dos jogadores</li>
+                            <li>Duração dos jogos e intervalos</li>
+                        </ul>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn" onclick="runAutoScheduling()">🤖 Agendar Automaticamente</button>
+                        ${currentTournament.matches?.length > 0
+                            ? '<button class="btn btn-secondary" onclick="clearSchedule()">🗑️ Limpar Agenda</button>'
+                            : ''
+                        }
+                    </div>
+
+                    <div id="scheduleDisplay"></div>
+                </div>
+            `;
+
+            displaySchedule();
+        }
+
+        function runAutoScheduling() {
+            if (!currentTournament.courts || currentTournament.courts.length === 0) {
+                alert('❌ É necessário cadastrar pelo menos uma quadra primeiro!');
+                return;
+            }
+
+            if (!currentTournament.groups && !currentTournament.bracket) {
+                alert('❌ É necessário gerar o chaveamento primeiro!');
+                return;
+            }
+
+            // Generate all matches
+            const allMatches = generateAllMatches();
+
+            if (allMatches.length === 0) {
+                alert('❌ Nenhum jogo para agendar!');
+                return;
+            }
+
+            // Run scheduling algorithm
+            const result = scheduleMatches(allMatches);
+
+            currentTournament.matches = result.scheduled;
+            currentTournament.conflicts = result.conflicts;
+
+            saveTournament();
+            displaySchedule();
+
+            if (result.conflicts.length > 0) {
+                alert(`⚠️ Agendamento concluído com ${result.conflicts.length} conflito(s)!\n\nVerifique a aba "Conflitos" para resolver.`);
+            } else {
+                alert(`✅ Todos os ${result.scheduled.length} jogos foram agendados com sucesso!`);
+            }
+        }
+
+        function generateAllMatches() {
+            const matches = [];
+            let matchId = 0;
+
+            // Generate group stage matches
+            if (currentTournament.groups) {
+                currentTournament.groups.forEach(group => {
+                    const players = group.players;
+
+                    // Round-robin: everyone plays everyone
+                    for (let i = 0; i < players.length; i++) {
+                        for (let j = i + 1; j < players.length; j++) {
+                            matches.push({
+                                id: `match_${matchId++}`,
+                                groupId: group.id,
+                                groupName: group.name,
+                                player1: players[i],
+                                player2: players[j],
+                                scheduled: false,
+                                court: null,
+                                date: null,
+                                time: null,
+                                result: null
+                            });
+                        }
+                    }
+                });
+            }
+
+            // Generate elimination matches (only first round with known players)
+            if (currentTournament.bracket && currentTournament.format === 'Eliminatórias') {
+                currentTournament.bracket.rounds[0].forEach(bracketMatch => {
+                    if (bracketMatch.player1 && bracketMatch.player2) {
+                        matches.push({
+                            id: `match_${matchId++}`,
+                            bracketMatchId: bracketMatch.id,
+                            round: bracketMatch.round,
+                            player1: bracketMatch.player1,
+                            player2: bracketMatch.player2,
+                            scheduled: false,
+                            court: null,
+                            date: null,
+                            time: null,
+                            result: null
+                        });
+                    }
+                });
+            }
+
+            return matches;
+        }
+
+        function scheduleMatches(matches) {
+            const scheduled = [];
+            const conflicts = [];
+
+            // Generate time slots from courts
+            const slots = generateTimeSlots();
+
+            if (slots.length === 0) {
+                return { scheduled: [], conflicts: matches.map(m => ({
+                    match: m,
+                    reason: 'Nenhuma quadra disponível',
+                    suggestions: []
+                }))};
+            }
+
+            // Sort matches by priority (can be enhanced)
+            const sortedMatches = [...matches];
+
+            for (const match of sortedMatches) {
+                let bestSlot = null;
+                let bestScore = -1;
+
+                // Find best slot for this match
+                for (const slot of slots) {
+                    if (slot.assigned) continue;
+
+                    const score = calculateSlotScore(match, slot);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestSlot = slot;
+                    }
+                }
+
+                if (bestSlot && bestScore >= 0) {
+                    // Schedule match
+                    match.scheduled = true;
+                    match.court = bestSlot.court;
+                    match.date = bestSlot.date;
+                    match.time = bestSlot.time;
+                    bestSlot.assigned = true;
+                    bestSlot.match = match;
+                    scheduled.push(match);
+                } else {
+                    // Could not schedule - conflict
+                    const suggestions = findAlternativeSlots(match, slots);
+                    conflicts.push({
+                        match,
+                        reason: bestScore < 0 ? 'Jogadores não disponíveis no horário' : 'Nenhum horário disponível',
+                        suggestions
+                    });
+                }
+            }
+
+            return { scheduled, conflicts };
+        }
+
+        function generateTimeSlots() {
+            const slots = [];
+            const startDate = new Date(currentTournament.startDate);
+            const endDate = new Date(currentTournament.endDate);
+            const matchDuration = currentTournament.duration;
+            const breakTime = currentTournament.breakTime || 0;
+
+            const currentDate = new Date(startDate);
+
+            while (currentDate <= endDate) {
+                const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][currentDate.getDay()];
+
+                // For each court
+                for (const court of currentTournament.courts) {
+                    const courtAvail = court.availability.find(a => a.day === dayOfWeek);
+
+                    if (courtAvail) {
+                        // Generate time slots
+                        const [startHour, startMin] = courtAvail.startTime.split(':').map(Number);
+                        const [endHour, endMin] = courtAvail.endTime.split(':').map(Number);
+
+                        const slotStart = new Date(currentDate);
+                        slotStart.setHours(startHour, startMin, 0, 0);
+
+                        const slotEnd = new Date(currentDate);
+                        slotEnd.setHours(endHour, endMin, 0, 0);
+
+                        let currentTime = new Date(slotStart);
+
+                        while (currentTime.getTime() + matchDuration * 60000 <= slotEnd.getTime()) {
+                            const timeStr = currentTime.toTimeString().slice(0, 5);
+                            const dateStr = currentDate.toISOString().split('T')[0];
+
+                            slots.push({
+                                court,
+                                date: dateStr,
+                                time: timeStr,
+                                dayOfWeek,
+                                assigned: false,
+                                match: null
+                            });
+
+                            currentTime = new Date(currentTime.getTime() + (matchDuration + breakTime) * 60000);
+                        }
+                    }
+                }
+
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            return slots;
+        }
+
+        function calculateSlotScore(match, slot) {
+            let score = 100;
+
+            // Check if both players are available
+            const player1Avail = match.player1.availability?.find(a => a.day === slot.dayOfWeek);
+            const player2Avail = match.player2.availability?.find(a => a.day === slot.dayOfWeek);
+
+            if (!player1Avail || !player2Avail) {
+                return -1; // Hard constraint violation
+            }
+
+            // Check time ranges
+            const slotTime = slot.time;
+            if (slotTime < player1Avail.startTime || slotTime >= player1Avail.endTime) {
+                return -1;
+            }
+            if (slotTime < player2Avail.startTime || slotTime >= player2Avail.endTime) {
+                return -1;
+            }
+
+            // Prefer earlier dates
+            const daysDiff = Math.floor((new Date(slot.date) - new Date(currentTournament.startDate)) / (1000 * 60 * 60 * 24));
+            score -= daysDiff;
+
+            // Prefer mid-day times
+            const [hour] = slot.time.split(':').map(Number);
+            if (hour >= 9 && hour <= 12) score += 10;
+            if (hour >= 14 && hour <= 18) score += 5;
+
+            return score;
+        }
+
+        function findAlternativeSlots(match, slots) {
+            const alternatives = [];
+
+            for (const slot of slots) {
+                if (!slot.assigned) {
+                    const score = calculateSlotScore(match, slot);
+                    if (score >= 0) {
+                        alternatives.push({
+                            slot,
+                            score,
+                            description: `${new Date(slot.date).toLocaleDateString('pt-BR')} às ${slot.time} - ${slot.court.name}`
+                        });
+                    }
+                }
+            }
+
+            return alternatives.sort((a, b) => b.score - a.score).slice(0, 5);
+        }
+
+        function displaySchedule() {
+            const container = document.getElementById('scheduleDisplay');
+
+            if (!currentTournament.matches || currentTournament.matches.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>Nenhum jogo agendado ainda.</p></div>';
+                return;
+            }
+
+            // Group matches by date
+            const matchesByDate = {};
+            currentTournament.matches.forEach(match => {
+                if (!matchesByDate[match.date]) {
+                    matchesByDate[match.date] = [];
+                }
+                matchesByDate[match.date].push(match);
+            });
+
+            let html = '<h3>Agenda de Jogos</h3>';
+
+            Object.keys(matchesByDate).sort().forEach(date => {
+                const matches = matchesByDate[date].sort((a, b) => a.time.localeCompare(b.time));
+                const dateFormatted = new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                html += `<h4 style="margin-top: 25px;">${dateFormatted}</h4>`;
+
+                matches.forEach(match => {
+                    html += `
+                        <div class="match-card">
+                            <div class="match-teams">
+                                ${match.player1.name} vs ${match.player2.name}
+                            </div>
+                            <div class="match-info">
+                                <span>⏰ ${match.time}</span>
+                                <span>🏟️ ${match.court.name}</span>
+                                ${match.groupName ? `<span>🏆 ${match.groupName}</span>` : ''}
+                                ${match.round ? `<span>🎯 Rodada ${match.round}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+
+            container.innerHTML = html;
+        }
+
+        function clearSchedule() {
+            if (confirm('⚠️ Tem certeza que deseja limpar toda a agenda?')) {
+                currentTournament.matches = [];
+                currentTournament.conflicts = [];
+                saveTournament();
+                displaySchedule();
+            }
+        }
+
+        // ==================== CONFLICTS MANAGEMENT ====================
+
+        function renderTournamentConflicts() {
+            const container = document.getElementById('tournamentConflicts');
+
+            container.innerHTML = `
+                <div class="card">
+                    <h2>⚠️ Gestão de Conflitos</h2>
+                    <div class="alert alert-info">
+                        Conflitos são jogos que não puderam ser agendados automaticamente. Revise e resolva manualmente ou use as sugestões.
+                    </div>
+
+                    <div id="conflictsDisplay"></div>
+                </div>
+            `;
+
+            displayConflicts();
+        }
+
+        function displayConflicts() {
+            const container = document.getElementById('conflictsDisplay');
+
+            if (!currentTournament.conflicts || currentTournament.conflicts.length === 0) {
+                container.innerHTML = '<div class="alert alert-success">✅ Nenhum conflito detectado! Todos os jogos foram agendados com sucesso.</div>';
+                return;
+            }
+
+            let html = `<div class="alert alert-warning">⚠️ ${currentTournament.conflicts.length} conflito(s) encontrado(s)</div>`;
+
+            currentTournament.conflicts.forEach((conflict, index) => {
+                const match = conflict.match;
+
+                html += `
+                    <div class="conflict-card">
+                        <div class="conflict-title">
+                            Conflito ${index + 1}: ${match.player1.name} vs ${match.player2.name}
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <strong>Motivo:</strong> ${conflict.reason}
+                        </div>
+                        ${conflict.suggestions.length > 0 ? `
+                            <div>
+                                <strong>Sugestões de Horários Alternativos:</strong>
+                                <div class="suggestion-list">
+                                    ${conflict.suggestions.map((sug, i) => `
+                                        <div class="suggestion-item" onclick="applySuggestion(${index}, ${i})">
+                                            ${i + 1}. ${sug.description}
+                                            <button class="btn btn-success btn-xs" style="float: right;">Aplicar</button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : '<div class="alert alert-warning">Nenhuma alternativa disponível</div>'}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function applySuggestion(conflictIndex, suggestionIndex) {
+            const conflict = currentTournament.conflicts[conflictIndex];
+            const suggestion = conflict.suggestions[suggestionIndex];
+
+            // Apply the suggestion
+            const match = conflict.match;
+            match.scheduled = true;
+            match.court = suggestion.slot.court;
+            match.date = suggestion.slot.date;
+            match.time = suggestion.slot.time;
+
+            // Add to scheduled matches
+            currentTournament.matches.push(match);
+
+            // Remove from conflicts
+            currentTournament.conflicts.splice(conflictIndex, 1);
+
+            saveTournament();
+            displayConflicts();
+            alert('✅ Conflito resolvido! Jogo agendado com sucesso.');
+        }
+
+        // ==================== RESULTS TRACKING ====================
+
+        function renderTournamentResults() {
+            const container = document.getElementById('tournamentResults');
+
+            container.innerHTML = `
+                <div class="card">
+                    <h2>📊 Registro de Resultados</h2>
+                    <div class="alert alert-info">
+                        Registre os resultados dos jogos realizados para atualizar automaticamente as classificações.
+                    </div>
+
+                    <div id="resultsDisplay"></div>
+                </div>
+            `;
+
+            displayResults();
+        }
+
+        function displayResults() {
+            const container = document.getElementById('resultsDisplay');
+
+            if (!currentTournament.matches || currentTournament.matches.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>Nenhum jogo agendado ainda.</p></div>';
+                return;
+            }
+
+            let html = '<h3>Jogos Agendados</h3>';
+
+            currentTournament.matches.forEach((match, index) => {
+                const hasResult = match.result !== null && match.result !== undefined;
+
+                html += `
+                    <div class="match-card ${hasResult ? 'style="border-color: #28a745;"' : ''}">
+                        <div class="match-teams">
+                            ${match.player1.name} vs ${match.player2.name}
+                            ${hasResult ? '<span class="badge badge-success" style="float: right;">Finalizado</span>' : ''}
+                        </div>
+                        <div class="match-info">
+                            <span>📅 ${new Date(match.date + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                            <span>⏰ ${match.time}</span>
+                            <span>🏟️ ${match.court.name}</span>
+                        </div>
+                        ${hasResult ? `
+                            <div style="margin-top: 10px; padding: 10px; background: #d4edda; border-radius: 5px;">
+                                <strong>Resultado:</strong> ${match.result.player1Score} x ${match.result.player2Score}
+                                <br><strong>Vencedor:</strong> ${match.result.winner.name}
+                            </div>
+                        ` : `
+                            <div style="margin-top: 10px;">
+                                <button class="btn btn-sm" onclick="registerResult(${index})">📝 Registrar Resultado</button>
+                            </div>
+                        `}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function registerResult(matchIndex) {
+            const match = currentTournament.matches[matchIndex];
+
+            const score1 = prompt(`Placar de ${match.player1.name}:`, '0');
+            const score2 = prompt(`Placar de ${match.player2.name}:`, '0');
+
+            if (score1 === null || score2 === null) return;
+
+            const player1Score = parseInt(score1);
+            const player2Score = parseInt(score2);
+
+            if (isNaN(player1Score) || isNaN(player2Score)) {
+                alert('Placar inválido!');
+                return;
+            }
+
+            if (player1Score === player2Score) {
+                alert('Não é permitido empate neste sistema!');
+                return;
+            }
+
+            const winner = player1Score > player2Score ? match.player1 : match.player2;
+
+            match.result = {
+                player1Score,
+                player2Score,
+                winner
+            };
+
+            // Update standings
+            updateStandings(match);
+
+            saveTournament();
+            displayResults();
+            alert('✅ Resultado registrado com sucesso!');
+        }
+
+        function updateStandings(match) {
+            // If it's a group match, update group standings
+            if (match.groupId !== undefined && currentTournament.groups) {
+                const group = currentTournament.groups.find(g => g.id === match.groupId);
+
+                if (group) {
+                    const p1 = group.players.find(p => p.id === match.player1.id);
+                    const p2 = group.players.find(p => p.id === match.player2.id);
+
+                    if (p1 && p2) {
+                        p1.played = (p1.played || 0) + 1;
+                        p2.played = (p2.played || 0) + 1;
+
+                        if (match.result.winner.id === match.player1.id) {
+                            p1.wins = (p1.wins || 0) + 1;
+                            p1.points = (p1.points || 0) + 3;
+                            p2.losses = (p2.losses || 0) + 1;
+                        } else {
+                            p2.wins = (p2.wins || 0) + 1;
+                            p2.points = (p2.points || 0) + 3;
+                            p1.losses = (p1.losses || 0) + 1;
+                        }
+
+                        // Sort by points
+                        group.players.sort((a, b) => (b.points || 0) - (a.points || 0));
+                    }
+                }
+            }
+
+            // If it's a bracket match, advance winner
+            if (match.bracketMatchId && currentTournament.bracket) {
+                const bracketMatch = currentTournament.bracket.rounds
+                    .flat()
+                    .find(m => m.id === match.bracketMatchId);
+
+                if (bracketMatch) {
+                    bracketMatch.winner = match.result.winner;
+                    bracketMatch.score = `${match.result.player1Score}-${match.result.player2Score}`;
+
+                    // Advance to next round
+                    const nextRound = bracketMatch.round + 1;
+                    if (nextRound <= currentTournament.bracket.rounds.length) {
+                        const matchPosition = parseInt(bracketMatch.id.split('-M')[1]) - 1;
+                        const nextMatchPosition = Math.floor(matchPosition / 2);
+                        const nextMatch = currentTournament.bracket.rounds[nextRound - 1][nextMatchPosition];
+
+                        if (matchPosition % 2 === 0) {
+                            nextMatch.player1 = match.result.winner;
+                        } else {
+                            nextMatch.player2 = match.result.winner;
+                        }
+                    }
+                }
+            }
+        }
+
+        // ==================== STANDINGS ====================
+
+        function renderTournamentStandings() {
+            const container = document.getElementById('tournamentStandings');
+
+            container.innerHTML = `
+                <div class="card">
+                    <h2>🏅 Classificação</h2>
+                    <div class="alert alert-info">
+                        Classificações atualizadas automaticamente conforme os resultados são registrados.
+                    </div>
+
+                    <div id="standingsDisplay"></div>
+                </div>
+            `;
+
+            displayStandings();
+        }
+
+        function displayStandings() {
+            const container = document.getElementById('standingsDisplay');
+
+            let html = '';
+
+            // Display group standings
+            if (currentTournament.groups && currentTournament.groups.length > 0) {
+                html += '<h3>Classificação por Grupos</h3><div class="group-container">';
+
+                currentTournament.groups.forEach(group => {
+                    html += `
+                        <div class="group-card">
+                            <div class="group-title">${group.name}</div>
+                            <table class="group-table">
+                                <thead>
+                                    <tr>
+                                        <th>Pos</th>
+                                        <th>Jogador</th>
+                                        <th>PTS</th>
+                                        <th>J</th>
+                                        <th>V</th>
+                                        <th>D</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${group.players.map((p, i) => `
+                                        <tr>
+                                            <td><strong>${i + 1}º</strong></td>
+                                            <td>${p.name}</td>
+                                            <td><strong>${p.points || 0}</strong></td>
+                                            <td>${p.played || 0}</td>
+                                            <td>${p.wins || 0}</td>
+                                            <td>${p.losses || 0}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            // Display bracket status
+            if (currentTournament.bracket) {
+                html += '<h3>Status das Eliminatórias</h3>';
+                html += '<div class="alert alert-info">Veja a chave completa na aba "Chaveamento"</div>';
+            }
+
+            if (!html) {
+                html = '<div class="empty-state"><p>Nenhuma classificação disponível ainda.</p></div>';
+            }
+
+            container.innerHTML = html;
         }
 
         // ==================== PROFILE ====================
