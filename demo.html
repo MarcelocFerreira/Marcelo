@@ -932,11 +932,7 @@
                         <select id="tournamentSport" required>
                             <option value="">Selecione...</option>
                             <option value="Tênis">🎾 Tênis</option>
-                            <option value="Futebol">⚽ Futebol</option>
-                            <option value="Vôlei">🏐 Vôlei</option>
-                            <option value="Basquete">🏀 Basquete</option>
-                            <option value="Padel">🎾 Padel</option>
-                            <option value="Beach Tennis">🏖️ Beach Tennis</option>
+                            <option value="Beach Tênis">🏖️ Beach Tênis</option>
                         </select>
                     </div>
 
@@ -946,22 +942,7 @@
                         <div class="category-manager">
                             <div><strong>Categorias Disponíveis:</strong></div>
                             <div class="category-tags" id="categoryTags">
-                                <span class="category-tag">
-                                    Infantil
-                                    <button type="button" onclick="removeCategory('Infantil')" title="Remover">×</button>
-                                </span>
-                                <span class="category-tag">
-                                    Juvenil
-                                    <button type="button" onclick="removeCategory('Juvenil')" title="Remover">×</button>
-                                </span>
-                                <span class="category-tag">
-                                    Adulto
-                                    <button type="button" onclick="removeCategory('Adulto')" title="Remover">×</button>
-                                </span>
-                                <span class="category-tag">
-                                    Master
-                                    <button type="button" onclick="removeCategory('Master')" title="Remover">×</button>
-                                </span>
+                                <!-- Categories will be rendered by JavaScript -->
                             </div>
                             <div class="add-category-form">
                                 <input type="text" id="newCategoryInput" placeholder="Digite nova categoria">
@@ -1014,15 +995,9 @@
                         <textarea id="tournamentNotes" rows="4" placeholder="Informações adicionais sobre o torneio..."></textarea>
                     </div>
 
-                    <!-- Players Section -->
-                    <h3>👥 Jogadores</h3>
-                    <div class="alert alert-info">
-                        Adicione os jogadores que participarão do torneio. Para cada jogador, informe nome, categoria e disponibilidade de horários.
-                    </div>
-
-                    <div class="players-container">
-                        <div id="playersList"></div>
-                        <button type="button" class="btn btn-success" onclick="addPlayer()">➕ Adicionar Jogador</button>
+                    <div class="alert alert-success" style="margin-top: 20px;">
+                        ℹ️ <strong>Jogadores serão adicionados após criar o torneio</strong><br>
+                        Você poderá adicionar jogadores e inscrevê-los em uma ou mais categorias na próxima etapa.
                     </div>
 
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 30px;">
@@ -1121,10 +1096,13 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Categoria *</label>
-                    <select id="modalPlayerCategory" required>
-                        <option value="">Selecione...</option>
-                    </select>
+                    <label>Categorias * <small>(pode selecionar várias)</small></label>
+                    <div class="alert alert-warning" style="font-size: 0.9em; padding: 10px; margin-bottom: 10px;">
+                        ⚠️ <strong>IMPORTANTE:</strong> Um jogador pode competir em múltiplas categorias simultaneamente.
+                    </div>
+                    <div id="modalPlayerCategories" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
+                        <!-- Categories checkboxes will be inserted here -->
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -1146,7 +1124,7 @@
     <script>
         // ==================== GLOBAL STATE ====================
 
-        let categories = ['Infantil', 'Juvenil', 'Adulto', 'Master'];
+        let categories = ['Iniciantes', '5ª Classe', '4ª Classe', '3ª Classe', '2ª Classe', '1ª Classe', 'Pro Classe'];
         let playerCounter = 0;
         let players = [];
         let currentTournament = null;
