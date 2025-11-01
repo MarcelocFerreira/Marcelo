@@ -1603,7 +1603,7 @@
                 StorageManager.setCurrentUser(user.id);
                 showMainApp();
             } else {
-                alert('❌ Email ou senha incorretos!');
+                showToast('Erro', 'Email ou senha incorretos!', 'error');
             }
         }
 
@@ -1617,14 +1617,14 @@
             const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
 
             if (password !== passwordConfirm) {
-                alert('❌ As senhas não coincidem!');
+                showToast('Erro', 'As senhas não coincidem!', 'error');
                 return;
             }
 
             const users = StorageManager.getUsers();
 
             if (users.find(u => u.email === email)) {
-                alert('❌ Este email já está cadastrado!');
+                showToast('Erro', 'Este email já está cadastrado!', 'error');
                 return;
             }
 
@@ -1641,7 +1641,7 @@
             users.push(newUser);
             StorageManager.saveUsers(users);
 
-            alert('✅ Conta criada com sucesso! Faça login para continuar.');
+            showToast('Sucesso', 'Conta criada com sucesso! Faça login para continuar.', 'success');
             showLogin();
 
             document.getElementById('registerForm').querySelector('form').reset();
@@ -1721,12 +1721,12 @@
             const newCategory = input.value.trim();
 
             if (!newCategory) {
-                alert('Digite um nome para a categoria!');
+                showToast('Erro', 'Digite um nome para a categoria!', 'error');
                 return;
             }
 
             if (categories.includes(newCategory)) {
-                alert('Esta categoria já existe!');
+                showToast('Erro', 'Esta categoria já existe!', 'error');
                 return;
             }
 
@@ -1862,7 +1862,7 @@
             tournaments.push(tournament);
             StorageManager.saveTournaments(user.id, tournaments);
 
-            alert(`✅ Torneio criado com sucesso!\n\nAgora você pode adicionar jogadores e inscrevê-los nas categorias.`);
+            showToast('Sucesso', 'Torneio criado com sucesso! Agora você pode adicionar jogadores e inscrevê-los nas categorias.', 'success');
 
             event.target.reset();
             resetForm();
@@ -1965,7 +1965,7 @@
             tournaments = tournaments.filter(t => t.id !== tournamentId);
             StorageManager.saveTournaments(user.id, tournaments);
 
-            alert('✅ Torneio excluído com sucesso!');
+            showToast('Sucesso', 'Torneio excluído com sucesso!', 'success');
             loadTournaments();
             updateStats();
         }
@@ -2233,12 +2233,12 @@
             });
 
             if (!name) {
-                alert('Por favor, preencha o nome do jogador!');
+                showToast('Erro', 'Por favor, preencha o nome do jogador!', 'error');
                 return;
             }
 
             if (selectedCategories.length === 0) {
-                alert('Por favor, selecione pelo menos uma categoria!');
+                showToast('Erro', 'Por favor, selecione pelo menos uma categoria!', 'error');
                 return;
             }
 
@@ -2278,7 +2278,7 @@
                         ? `${selectedCategories.length} categorias (${selectedCategories.join(', ')})`
                         : selectedCategories[0];
 
-                    alert(`✅ Jogador ${name} atualizado com sucesso!\n\nCategorias: ${catText}`);
+                    showToast('Sucesso', `Jogador ${name} atualizado! Categorias: ${catText}`, 'success');
                 }
             } else {
                 // ADDING new player
@@ -2299,7 +2299,7 @@
                     ? `${selectedCategories.length} categorias (${selectedCategories.join(', ')})`
                     : selectedCategories[0];
 
-                alert(`✅ Jogador ${name} adicionado com sucesso em ${catText}!`);
+                showToast('Sucesso', `Jogador ${name} adicionado em ${catText}!`, 'success');
             }
 
             // Save tournament
@@ -2343,7 +2343,7 @@
             // Refresh view
             renderTournamentOverview();
 
-            alert(`✅ Jogador ${player.name} removido com sucesso!`);
+            showToast('Sucesso', `Jogador ${player.name} removido com sucesso!`, 'success');
         }
 
         // ==================== TEST DATA ====================
@@ -2565,7 +2565,7 @@
             // Refresh view
             renderTournamentOverview();
 
-            alert(`✅ Dados de teste carregados!\n\n👥 ${testPlayers.length} jogadores adicionados\n🏟️ ${testCourts.length} quadras configuradas\n\nAgora vá para a aba "Chaveamento" para gerar os grupos!`);
+            showToast('Sucesso', `Dados de teste carregados! ${testPlayers.length} jogadores e ${testCourts.length} quadras adicionadas. Vá para "Chaveamento" para continuar.`, 'success');
         }
 
         // ==================== COURTS MANAGEMENT ====================
@@ -2637,7 +2637,7 @@
             }
 
             if (availability.length === 0) {
-                alert('É necessário configurar pelo menos um dia de disponibilidade!');
+                showToast('Erro', 'É necessário configurar pelo menos um dia de disponibilidade!', 'error');
                 return;
             }
 
@@ -2650,7 +2650,7 @@
             currentTournament.courts.push(court);
             saveTournament();
             renderCourts();
-            alert('✅ Quadra adicionada com sucesso!');
+            showToast('Sucesso', 'Quadra adicionada com sucesso!', 'success');
         }
 
         function removeCourt(courtId) {
@@ -2691,7 +2691,7 @@
 
         function generateBracket() {
             if (!currentTournament.players || currentTournament.players.length === 0) {
-                alert('❌ É necessário ter jogadores cadastrados para gerar o chaveamento!');
+                showToast('Erro', 'É necessário ter jogadores cadastrados para gerar o chaveamento!', 'error');
                 return;
             }
 
@@ -2757,14 +2757,14 @@
             });
 
             if (totalMatches === 0) {
-                alert('❌ Não foi possível gerar chaveamento. Verifique se há jogadores suficientes em cada categoria.');
+                showToast('Erro', 'Não foi possível gerar chaveamento. Verifique se há jogadores suficientes em cada categoria.', 'error');
                 return;
             }
 
             currentTournament.status = 'Planejando';
             saveTournament();
             displayBracket();
-            alert(`✅ Chaveamento gerado com sucesso!\n\n📊 ${currentTournament.groups.length} grupos criados\n🎯 Aproximadamente ${totalMatches} jogos serão agendados`);
+            showToast('Sucesso', `Chaveamento gerado! ${currentTournament.groups.length} grupos criados. Aproximadamente ${totalMatches} jogos serão agendados.`, 'success');
         }
 
         function generateEliminationBracket(players, category) {
@@ -2955,12 +2955,12 @@
 
         function runAutoScheduling() {
             if (!currentTournament.courts || currentTournament.courts.length === 0) {
-                alert('❌ É necessário cadastrar pelo menos uma quadra primeiro!');
+                showToast('Erro', 'É necessário cadastrar pelo menos uma quadra primeiro!', 'error');
                 return;
             }
 
             if (!currentTournament.groups && !currentTournament.bracket) {
-                alert('❌ É necessário gerar o chaveamento primeiro!');
+                showToast('Erro', 'É necessário gerar o chaveamento primeiro!', 'error');
                 return;
             }
 
@@ -2968,7 +2968,7 @@
             const allMatches = generateAllMatches();
 
             if (allMatches.length === 0) {
-                alert('❌ Nenhum jogo para agendar!');
+                showToast('Erro', 'Nenhum jogo para agendar!', 'error');
                 return;
             }
 
@@ -2982,9 +2982,9 @@
             displaySchedule();
 
             if (result.conflicts.length > 0) {
-                alert(`⚠️ Agendamento concluído com ${result.conflicts.length} conflito(s)!\n\nVerifique a aba "Conflitos" para resolver.`);
+                showToast('Aviso', `Agendamento concluído com ${result.conflicts.length} conflito(s)! Verifique a aba "Conflitos" para resolver.`, 'warning');
             } else {
-                alert(`✅ Todos os ${result.scheduled.length} jogos foram agendados com sucesso!`);
+                showToast('Sucesso', `Todos os ${result.scheduled.length} jogos foram agendados com sucesso!`, 'success');
             }
         }
 
@@ -3373,7 +3373,7 @@
 
             saveTournament();
             displayConflicts();
-            alert('✅ Conflito resolvido! Jogo agendado com sucesso.');
+            showToast('Sucesso', 'Conflito resolvido! Jogo agendado com sucesso.', 'success');
         }
 
         // ==================== RESULTS TRACKING ====================
@@ -3448,12 +3448,12 @@
             const player2Score = parseInt(score2);
 
             if (isNaN(player1Score) || isNaN(player2Score)) {
-                alert('Placar inválido!');
+                showToast('Erro', 'Placar inválido!', 'error');
                 return;
             }
 
             if (player1Score === player2Score) {
-                alert('Não é permitido empate neste sistema!');
+                showToast('Erro', 'Não é permitido empate neste sistema!', 'error');
                 return;
             }
 
@@ -3470,7 +3470,7 @@
 
             saveTournament();
             displayResults();
-            alert('✅ Resultado registrado com sucesso!');
+            showToast('Sucesso', 'Resultado registrado com sucesso!', 'success');
         }
 
         function updateStandings(match) {
@@ -3630,7 +3630,7 @@
             StorageManager.updateUser(user);
             document.getElementById('userName').textContent = user.name;
 
-            alert('✅ Perfil atualizado com sucesso!');
+            showToast('Sucesso', 'Perfil atualizado com sucesso!', 'success');
         }
 
         function updateStats() {
