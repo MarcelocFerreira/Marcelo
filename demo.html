@@ -1350,147 +1350,13 @@
             }
         }
 
-        // ==================== PLAYERS ====================
-
-        function addPlayer() {
-            const playerId = playerCounter++;
-            const player = {
-                id: playerId,
-                name: '',
-                category: '',
-                availability: []
-            };
-
-            players.push(player);
-            renderPlayers();
-        }
-
-        function removePlayer(playerId) {
-            players = players.filter(p => p.id !== playerId);
-            renderPlayers();
-        }
-
-        function renderPlayers() {
-            const container = document.getElementById('playersList');
-
-            if (players.length === 0) {
-                container.innerHTML = '<p style="color: #666; text-align: center;">Nenhum jogador adicionado ainda.</p>';
-                return;
-            }
-
-            container.innerHTML = players.map(player => `
-                <div class="player-item" id="player-${player.id}">
-                    <div class="player-header">
-                        <div class="player-name">Jogador ${player.id + 1}</div>
-                        <button type="button" class="btn btn-danger btn-xs" onclick="removePlayer(${player.id})">
-                            🗑️ Remover
-                        </button>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Nome Completo *</label>
-                        <input type="text"
-                               id="playerName${player.id}"
-                               placeholder="Ex: João Silva"
-                               value="${player.name}"
-                               onchange="updatePlayerData(${player.id})"
-                               required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Categoria *</label>
-                        <select id="playerCategory${player.id}"
-                                onchange="updatePlayerData(${player.id})"
-                                required>
-                            <option value="">Selecione...</option>
-                            ${categories.map(cat => `
-                                <option value="${cat}" ${player.category === cat ? 'selected' : ''}>
-                                    ${cat}
-                                </option>
-                            `).join('')}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Disponibilidade de Horários</label>
-                        <div class="alert alert-info" style="font-size: 0.9em; padding: 10px;">
-                            Marque os dias e horários em que o jogador está disponível para jogar.
-                        </div>
-                        <div class="availability-grid">
-                            ${daysOfWeek.map(day => `
-                                <div class="availability-item">
-                                    <input type="checkbox"
-                                           id="player${player.id}_${day.id}"
-                                           onchange="toggleDayAvailability(${player.id}, '${day.id}')">
-                                    <label for="player${player.id}_${day.id}" style="margin: 0; cursor: pointer;">
-                                        ${day.label}
-                                    </label>
-                                </div>
-                                <div id="player${player.id}_${day.id}_times" class="hidden">
-                                    <div class="time-inputs">
-                                        <input type="time"
-                                               id="player${player.id}_${day.id}_start"
-                                               placeholder="Início"
-                                               onchange="updatePlayerData(${player.id})">
-                                        <input type="time"
-                                               id="player${player.id}_${day.id}_end"
-                                               placeholder="Fim"
-                                               onchange="updatePlayerData(${player.id})">
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function toggleDayAvailability(playerId, dayId) {
-            const checkbox = document.getElementById(`player${playerId}_${dayId}`);
-            const timesDiv = document.getElementById(`player${playerId}_${dayId}_times`);
-
-            if (checkbox.checked) {
-                timesDiv.classList.remove('hidden');
-            } else {
-                timesDiv.classList.add('hidden');
-            }
-
-            updatePlayerData(playerId);
-        }
-
-        function updatePlayerData(playerId) {
-            const player = players.find(p => p.id === playerId);
-            if (!player) return;
-
-            player.name = document.getElementById(`playerName${playerId}`).value;
-            player.category = document.getElementById(`playerCategory${playerId}`).value;
-
-            player.availability = [];
-
-            daysOfWeek.forEach(day => {
-                const checkbox = document.getElementById(`player${playerId}_${day.id}`);
-                if (checkbox && checkbox.checked) {
-                    const startInput = document.getElementById(`player${playerId}_${day.id}_start`);
-                    const endInput = document.getElementById(`player${playerId}_${day.id}_end`);
-
-                    player.availability.push({
-                        day: day.id,
-                        dayLabel: day.label,
-                        startTime: startInput.value || '08:00',
-                        endTime: endInput.value || '18:00'
-                    });
-                }
-            });
-        }
-
         // ==================== TOURNAMENTS ====================
 
         function resetForm() {
-            categories = ['Infantil', 'Juvenil', 'Adulto', 'Master'];
+            categories = ['Iniciantes', '5ª Classe', '4ª Classe', '3ª Classe', '2ª Classe', '1ª Classe', 'Pro Classe'];
             playerCounter = 0;
             players = [];
             renderCategories();
-            renderPlayers();
         }
 
         function loadTournaments() {
@@ -1580,18 +1446,6 @@
             const user = StorageManager.getCurrentUser();
             if (!user) return;
 
-            // Validate players
-            for (let player of players) {
-                if (!player.name) {
-                    alert(`Por favor, preencha o nome do Jogador ${player.id + 1}`);
-                    return;
-                }
-                if (!player.category) {
-                    alert(`Por favor, selecione a categoria do ${player.name}`);
-                    return;
-                }
-            }
-
             const tournament = {
                 id: 'tournament_' + Date.now(),
                 name: document.getElementById('tournamentName').value,
@@ -1605,7 +1459,7 @@
                 location: document.getElementById('tournamentLocation').value,
                 notes: document.getElementById('tournamentNotes').value,
                 status: 'Rascunho',
-                players: [...players],
+                players: [], // Players will be added later
                 createdAt: new Date().toISOString(),
                 courts: [],
                 teams: [],
@@ -1616,11 +1470,13 @@
             tournaments.push(tournament);
             StorageManager.saveTournaments(user.id, tournaments);
 
-            alert(`✅ Torneio criado com sucesso!\n\n📊 ${players.length} jogador${players.length !== 1 ? 'es' : ''} cadastrado${players.length !== 1 ? 's' : ''}!`);
+            alert(`✅ Torneio criado com sucesso!\n\nAgora você pode adicionar jogadores e inscrevê-los nas categorias.`);
 
             event.target.reset();
             resetForm();
-            showTab('myTournaments');
+
+            // Open the tournament automatically
+            viewTournament(tournament.id);
         }
 
         function viewTournament(tournamentId) {
@@ -1763,11 +1619,25 @@
                     <div class="tournament-info" style="margin-bottom: 15px;">
                         ${currentTournament.players && currentTournament.players.length > 0
                             ? currentTournament.players.map((p, i) => {
-                                const availDays = p.availability.map(a => a.dayLabel).join(', ');
+                                const availDays = p.availability?.map(a => a.dayLabel).join(', ') || '';
+                                // Handle both old (category) and new (categories) formats
+                                const playerCategories = p.categories || (p.category ? [p.category] : []);
+                                const categoriesText = playerCategories.length > 1
+                                    ? `${playerCategories.length} categorias`
+                                    : playerCategories[0] || 'Sem categoria';
+                                const categoriesBadges = playerCategories.map(cat =>
+                                    `<span class="badge badge-info" style="margin-right: 5px;">${cat}</span>`
+                                ).join('');
+
                                 return `<div style="padding: 10px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <strong>${i + 1}. ${p.name}</strong> (${p.category})<br>
-                                        <small>Disponível: ${availDays || 'Não informado'}</small>
+                                    <div style="flex: 1;">
+                                        <div style="margin-bottom: 5px;">
+                                            <strong>${i + 1}. ${p.name}</strong>
+                                        </div>
+                                        <div style="margin-bottom: 5px;">
+                                            ${categoriesBadges}
+                                        </div>
+                                        <small>📅 Disponível: ${availDays || 'Não informado'}</small>
                                     </div>
                                     <button class="btn btn-danger btn-xs" onclick="removePlayerFromTournament(${p.id})">🗑️ Remover</button>
                                 </div>`;
@@ -1787,10 +1657,16 @@
         // ==================== PLAYER MANAGEMENT IN TOURNAMENT ====================
 
         function showAddPlayerModal() {
-            // Populate categories
-            const categorySelect = document.getElementById('modalPlayerCategory');
-            categorySelect.innerHTML = '<option value="">Selecione...</option>' +
-                currentTournament.categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+            // Populate categories as checkboxes
+            const categoriesContainer = document.getElementById('modalPlayerCategories');
+            categoriesContainer.innerHTML = currentTournament.categories.map(cat => `
+                <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: #f5f5f5; border-radius: 6px;">
+                    <input type="checkbox" id="modalCat_${cat.replace(/\s+/g, '_')}" value="${cat}">
+                    <label for="modalCat_${cat.replace(/\s+/g, '_')}" style="margin: 0; cursor: pointer; font-weight: 500;">
+                        ${cat}
+                    </label>
+                </div>
+            `).join('');
 
             // Create availability checkboxes
             const availContainer = document.getElementById('modalPlayerAvailability');
@@ -1814,7 +1690,12 @@
         function closeAddPlayerModal() {
             document.getElementById('addPlayerModal').classList.remove('active');
             document.getElementById('modalPlayerName').value = '';
-            document.getElementById('modalPlayerCategory').value = '';
+
+            // Uncheck all category checkboxes
+            currentTournament.categories.forEach(cat => {
+                const checkbox = document.getElementById(`modalCat_${cat.replace(/\s+/g, '_')}`);
+                if (checkbox) checkbox.checked = false;
+            });
         }
 
         function toggleModalDayAvailability(dayId) {
@@ -1832,10 +1713,23 @@
             event.preventDefault();
 
             const name = document.getElementById('modalPlayerName').value;
-            const category = document.getElementById('modalPlayerCategory').value;
 
-            if (!name || !category) {
-                alert('Por favor, preencha todos os campos obrigatórios!');
+            // Get selected categories
+            const selectedCategories = [];
+            currentTournament.categories.forEach(cat => {
+                const checkbox = document.getElementById(`modalCat_${cat.replace(/\s+/g, '_')}`);
+                if (checkbox && checkbox.checked) {
+                    selectedCategories.push(cat);
+                }
+            });
+
+            if (!name) {
+                alert('Por favor, preencha o nome do jogador!');
+                return;
+            }
+
+            if (selectedCategories.length === 0) {
+                alert('Por favor, selecione pelo menos uma categoria!');
                 return;
             }
 
@@ -1860,7 +1754,7 @@
             const newPlayer = {
                 id: Date.now(), // Use timestamp as unique ID
                 name,
-                category,
+                categories: selectedCategories, // Array of categories
                 availability
             };
 
@@ -1879,7 +1773,11 @@
             // Refresh view
             renderTournamentOverview();
 
-            alert(`✅ Jogador ${name} adicionado com sucesso!`);
+            const catText = selectedCategories.length > 1
+                ? `${selectedCategories.length} categorias (${selectedCategories.join(', ')})`
+                : selectedCategories[0];
+
+            alert(`✅ Jogador ${name} adicionado com sucesso em ${catText}!`);
         }
 
         function removePlayerFromTournament(playerId) {
@@ -2038,60 +1936,90 @@
         }
 
         function generateBracket() {
-            if (!currentTournament.players || currentTournament.players.length < 2) {
-                alert('❌ É necessário ter pelo menos 2 jogadores para gerar o chaveamento!');
+            if (!currentTournament.players || currentTournament.players.length === 0) {
+                alert('❌ É necessário ter jogadores cadastrados para gerar o chaveamento!');
                 return;
             }
 
-            // Shuffle players
-            const shuffledPlayers = [...currentTournament.players].sort(() => Math.random() - 0.5);
+            // Generate bracket for EACH category
+            currentTournament.groups = [];
+            currentTournament.brackets = {}; // Changed from single bracket to brackets per category
 
-            if (currentTournament.format === 'Grupos' || currentTournament.format === 'Misto') {
-                // Generate groups
-                const groupSize = 4;
-                const numGroups = Math.ceil(shuffledPlayers.length / groupSize);
-                currentTournament.groups = [];
+            let totalMatches = 0;
 
-                for (let i = 0; i < numGroups; i++) {
-                    const groupPlayers = shuffledPlayers.slice(i * groupSize, (i + 1) * groupSize);
-                    const group = {
-                        id: i,
-                        name: `Grupo ${String.fromCharCode(65 + i)}`,
-                        players: groupPlayers.map(p => ({
-                            ...p,
-                            played: 0,
-                            wins: 0,
-                            losses: 0,
-                            points: 0
-                        }))
-                    };
-                    currentTournament.groups.push(group);
+            currentTournament.categories.forEach(category => {
+                // Get all players in this category
+                const playersInCategory = currentTournament.players.filter(p =>
+                    p.categories && p.categories.includes(category)
+                );
+
+                if (playersInCategory.length < 2) {
+                    // Skip categories with less than 2 players
+                    return;
                 }
-            }
 
-            if (currentTournament.format === 'Eliminatórias' || currentTournament.format === 'Misto') {
-                // Generate elimination bracket
-                const players = currentTournament.format === 'Misto'
-                    ? [] // Will be filled after group stage
-                    : shuffledPlayers;
+                // Shuffle players for this category
+                const shuffledPlayers = [...playersInCategory].sort(() => Math.random() - 0.5);
 
-                if (currentTournament.format === 'Eliminatórias') {
-                    currentTournament.bracket = generateEliminationBracket(players);
+                if (currentTournament.format === 'Grupos' || currentTournament.format === 'Misto') {
+                    // Generate groups for this category
+                    const groupSize = 4;
+                    const numGroups = Math.ceil(shuffledPlayers.length / groupSize);
+
+                    for (let i = 0; i < numGroups; i++) {
+                        const groupPlayers = shuffledPlayers.slice(i * groupSize, (i + 1) * groupSize);
+                        const group = {
+                            id: `${category}_G${i}`,
+                            category: category,
+                            name: `${category} - Grupo ${String.fromCharCode(65 + i)}`,
+                            players: groupPlayers.map(p => ({
+                                ...p,
+                                played: 0,
+                                wins: 0,
+                                losses: 0,
+                                points: 0
+                            }))
+                        };
+                        currentTournament.groups.push(group);
+
+                        // Count matches (round-robin: n*(n-1)/2)
+                        totalMatches += (groupPlayers.length * (groupPlayers.length - 1)) / 2;
+                    }
                 }
+
+                if (currentTournament.format === 'Eliminatórias' || currentTournament.format === 'Misto') {
+                    // Generate elimination bracket for this category
+                    const players = currentTournament.format === 'Misto'
+                        ? [] // Will be filled after group stage
+                        : shuffledPlayers;
+
+                    if (currentTournament.format === 'Eliminatórias') {
+                        currentTournament.brackets[category] = generateEliminationBracket(players, category);
+
+                        // Count elimination matches
+                        totalMatches += players.length - 1; // n-1 matches in single elimination
+                    }
+                }
+            });
+
+            if (totalMatches === 0) {
+                alert('❌ Não foi possível gerar chaveamento. Verifique se há jogadores suficientes em cada categoria.');
+                return;
             }
 
             currentTournament.status = 'Planejando';
             saveTournament();
             displayBracket();
-            alert('✅ Chaveamento gerado com sucesso!');
+            alert(`✅ Chaveamento gerado com sucesso!\n\n📊 ${currentTournament.groups.length} grupos criados\n🎯 Aproximadamente ${totalMatches} jogos serão agendados`);
         }
 
-        function generateEliminationBracket(players) {
+        function generateEliminationBracket(players, category) {
             // Round to next power of 2
             const bracketSize = Math.pow(2, Math.ceil(Math.log2(players.length)));
             const rounds = Math.log2(bracketSize);
 
             const bracket = {
+                category: category,
                 rounds: [],
                 size: bracketSize
             };
@@ -2134,76 +2062,96 @@
         function displayBracket() {
             const container = document.getElementById('bracketDisplay');
 
-            if (!currentTournament.groups && !currentTournament.bracket) {
+            const hasGroups = currentTournament.groups && currentTournament.groups.length > 0;
+            const hasBrackets = currentTournament.brackets && Object.keys(currentTournament.brackets).length > 0;
+            const hasOldBracket = currentTournament.bracket; // Backward compatibility
+
+            if (!hasGroups && !hasBrackets && !hasOldBracket) {
                 container.innerHTML = '<div class="empty-state"><p>Nenhum chaveamento gerado ainda.</p></div>';
                 return;
             }
 
             let html = '';
 
-            // Display groups
-            if (currentTournament.groups && currentTournament.groups.length > 0) {
-                html += '<h3>Fase de Grupos</h3><div class="group-container">';
-
+            // Display groups organized by category
+            if (hasGroups) {
+                // Group by category
+                const groupsByCategory = {};
                 currentTournament.groups.forEach(group => {
-                    html += `
-                        <div class="group-card">
-                            <div class="group-title">${group.name}</div>
-                            <table class="group-table">
-                                <thead>
-                                    <tr>
-                                        <th>Jogador</th>
-                                        <th>PTS</th>
-                                        <th>V</th>
-                                        <th>D</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${group.players.map(p => `
-                                        <tr>
-                                            <td>${p.name}</td>
-                                            <td><strong>${p.points || 0}</strong></td>
-                                            <td>${p.wins || 0}</td>
-                                            <td>${p.losses || 0}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
+                    const cat = group.category || 'Geral';
+                    if (!groupsByCategory[cat]) groupsByCategory[cat] = [];
+                    groupsByCategory[cat].push(group);
                 });
 
-                html += '</div>';
-            }
+                Object.keys(groupsByCategory).forEach(category => {
+                    html += `<h3 style="color: #667eea; margin-top: 30px;">📋 ${category} - Fase de Grupos</h3>`;
+                    html += '<div class="group-container">';
 
-            // Display elimination bracket
-            if (currentTournament.bracket) {
-                html += '<h3>Chave de Eliminatórias</h3><div class="bracket-container">';
-
-                const roundNames = ['Oitavas', 'Quartas', 'Semifinal', 'Final'];
-                currentTournament.bracket.rounds.forEach((round, roundIndex) => {
-                    const roundName = roundNames[roundNames.length - currentTournament.bracket.rounds.length + roundIndex] || `Rodada ${roundIndex + 1}`;
-
-                    html += `<div class="bracket-round">`;
-                    html += `<h4>${roundName}</h4>`;
-
-                    round.forEach(match => {
+                    groupsByCategory[category].forEach(group => {
                         html += `
-                            <div class="bracket-match">
-                                <div class="bracket-team ${match.winner && match.winner.id === match.player1?.id ? 'winner' : ''}">
-                                    ${match.player1 ? match.player1.name : 'TBD'}
-                                </div>
-                                <div class="bracket-team ${match.winner && match.winner.id === match.player2?.id ? 'winner' : ''}">
-                                    ${match.player2 ? match.player2.name : 'TBD'}
-                                </div>
+                            <div class="group-card">
+                                <div class="group-title">${group.name}</div>
+                                <table class="group-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Jogador</th>
+                                            <th>PTS</th>
+                                            <th>V</th>
+                                            <th>D</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${group.players.map(p => `
+                                            <tr>
+                                                <td>${p.name}</td>
+                                                <td><strong>${p.points || 0}</strong></td>
+                                                <td>${p.wins || 0}</td>
+                                                <td>${p.losses || 0}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
                             </div>
                         `;
                     });
 
-                    html += `</div>`;
+                    html += '</div>';
                 });
+            }
 
-                html += '</div>';
+            // Display elimination brackets organized by category
+            if (hasBrackets) {
+                Object.keys(currentTournament.brackets).forEach(category => {
+                    const bracket = currentTournament.brackets[category];
+
+                    html += `<h3 style="color: #667eea; margin-top: 30px;">🏆 ${category} - Eliminatórias</h3>`;
+                    html += '<div class="bracket-container">';
+
+                    const roundNames = ['Oitavas', 'Quartas', 'Semifinal', 'Final'];
+                    bracket.rounds.forEach((round, roundIndex) => {
+                        const roundName = roundNames[roundNames.length - bracket.rounds.length + roundIndex] || `Rodada ${roundIndex + 1}`;
+
+                        html += `<div class="bracket-round">`;
+                        html += `<h4>${roundName}</h4>`;
+
+                        round.forEach(match => {
+                            html += `
+                                <div class="bracket-match">
+                                    <div class="bracket-team ${match.winner && match.winner.id === match.player1?.id ? 'winner' : ''}">
+                                        ${match.player1 ? match.player1.name : 'TBD'}
+                                    </div>
+                                    <div class="bracket-team ${match.winner && match.winner.id === match.player2?.id ? 'winner' : ''}">
+                                        ${match.player2 ? match.player2.name : 'TBD'}
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        html += `</div>`;
+                    });
+
+                    html += '</div>';
+                });
             }
 
             container.innerHTML = html;
