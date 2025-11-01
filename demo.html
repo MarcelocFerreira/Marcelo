@@ -1385,6 +1385,139 @@
             }
         }
 
+        /* Dashboard Charts */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .chart-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .progress-bar-container {
+            background: #e0e0e0;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .timeline-item {
+            padding: 12px;
+            border-left: 3px solid #667eea;
+            margin-bottom: 10px;
+            background: #f5f5f5;
+            border-radius: 0 8px 8px 0;
+            transition: all 0.3s;
+        }
+
+        .timeline-item:hover {
+            background: #ebebeb;
+            transform: translateX(5px);
+        }
+
+        .timeline-date {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .dark-mode .chart-card {
+            background: #0f3460;
+        }
+
+        .dark-mode .chart-title {
+            color: #eee;
+        }
+
+        .dark-mode .stat-label {
+            color: #aaa;
+        }
+
+        .dark-mode .progress-bar-container {
+            background: #1a4d7a;
+        }
+
+        .dark-mode .timeline-item {
+            background: #1a4d7a;
+        }
+
+        .dark-mode .timeline-item:hover {
+            background: #2a5d8a;
+        }
+
         @media (max-width: 768px) {
             .tournament-grid {
                 grid-template-columns: 1fr;
@@ -1647,21 +1780,8 @@
             </div>
 
             <div class="card">
-                <h2>Estatísticas</h2>
-                <div class="stat-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Total de Torneios</div>
-                        <div class="stat-number" id="statTotalTournaments">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Ativos</div>
-                        <div class="stat-number" id="statActiveTournaments">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Concluídos</div>
-                        <div class="stat-number" id="statCompletedTournaments">0</div>
-                    </div>
-                </div>
+                <h2>📊 Dashboard & Estatísticas</h2>
+                <div id="dashboardContent"></div>
             </div>
         </div>
 
@@ -4422,14 +4542,149 @@
             if (!user) return;
 
             const tournaments = StorageManager.getTournaments(user.id);
+            const container = document.getElementById('dashboardContent');
 
+            if (tournaments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Nenhum torneio criado ainda. Crie seu primeiro torneio para ver estatísticas!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate stats
             const total = tournaments.length;
             const active = tournaments.filter(t => t.status === 'Em Andamento' || t.status === 'Planejando').length;
             const completed = tournaments.filter(t => t.status === 'Concluído').length;
 
-            document.getElementById('statTotalTournaments').textContent = total;
-            document.getElementById('statActiveTournaments').textContent = active;
-            document.getElementById('statCompletedTournaments').textContent = completed;
+            let totalPlayers = 0;
+            let totalMatches = 0;
+            let totalMatchesPlayed = 0;
+            let upcomingMatches = [];
+
+            tournaments.forEach(t => {
+                if (t.players) totalPlayers += t.players.length;
+                if (t.matches) {
+                    totalMatches += t.matches.length;
+                    totalMatchesPlayed += t.matches.filter(m => m.result).length;
+
+                    // Get upcoming matches
+                    const today = new Date();
+                    t.matches.filter(m => !m.result && m.date).forEach(m => {
+                        const matchDate = new Date(m.date + 'T00:00:00');
+                        if (matchDate >= today) {
+                            upcomingMatches.push({
+                                ...m,
+                                tournamentName: t.name,
+                                dateObj: matchDate
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Sort upcoming matches by date
+            upcomingMatches.sort((a, b) => a.dateObj - b.dateObj);
+            const next5Matches = upcomingMatches.slice(0, 5);
+
+            const progressPercent = totalMatches > 0 ? Math.round((totalMatchesPlayed / totalMatches) * 100) : 0;
+
+            let html = `
+                <div class="dashboard-grid">
+                    <!-- Total Tournaments -->
+                    <div class="chart-card">
+                        <div class="chart-title">🏆 Total de Torneios</div>
+                        <div class="stat-number">${total}</div>
+                        <div class="stat-label">Torneios Criados</div>
+                    </div>
+
+                    <!-- Active Tournaments -->
+                    <div class="chart-card">
+                        <div class="chart-title">🔥 Torneios Ativos</div>
+                        <div class="stat-number">${active}</div>
+                        <div class="stat-label">Em andamento</div>
+                    </div>
+
+                    <!-- Completed Tournaments -->
+                    <div class="chart-card">
+                        <div class="chart-title">✅ Concluídos</div>
+                        <div class="stat-number">${completed}</div>
+                        <div class="stat-label">Finalizados</div>
+                    </div>
+
+                    <!-- Total Players -->
+                    <div class="chart-card">
+                        <div class="chart-title">👥 Jogadores</div>
+                        <div class="stat-number">${totalPlayers}</div>
+                        <div class="stat-label">Total cadastrados</div>
+                    </div>
+
+                    <!-- Matches Progress -->
+                    <div class="chart-card" style="grid-column: span 2;">
+                        <div class="chart-title">📊 Progresso dos Jogos</div>
+                        <div style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
+                            ${totalMatchesPlayed} de ${totalMatches} jogos finalizados
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: ${progressPercent}%;">
+                                ${progressPercent}%
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Matches Timeline -->
+                    ${next5Matches.length > 0 ? `
+                        <div class="chart-card" style="grid-column: span 2;">
+                            <div class="chart-title">📅 Próximos Jogos</div>
+                            ${next5Matches.map(m => `
+                                <div class="timeline-item">
+                                    <div class="timeline-date">
+                                        ${m.dateObj.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })} • ${m.time}
+                                    </div>
+                                    <div style="font-size: 0.95em;">
+                                        <strong>${m.player1.name}</strong> vs <strong>${m.player2.name}</strong>
+                                    </div>
+                                    <div style="font-size: 0.85em; color: #666; margin-top: 3px;">
+                                        🏟️ ${m.court.name} • 🏆 ${m.tournamentName}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    <!-- Tournament Status Distribution -->
+                    <div class="chart-card">
+                        <div class="chart-title">📈 Status dos Torneios</div>
+                        <div style="margin: 20px 0;">
+                            ${active > 0 ? `
+                                <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                        <span>Ativos</span>
+                                        <strong>${active}</strong>
+                                    </div>
+                                    <div class="progress-bar-container" style="height: 20px;">
+                                        <div class="progress-bar" style="width: ${(active/total*100)}%; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);"></div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            ${completed > 0 ? `
+                                <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                        <span>Concluídos</span>
+                                        <strong>${completed}</strong>
+                                    </div>
+                                    <div class="progress-bar-container" style="height: 20px;">
+                                        <div class="progress-bar" style="width: ${(completed/total*100)}%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
         }
 
         // ==================== INITIALIZATION ====================
