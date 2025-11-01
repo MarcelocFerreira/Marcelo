@@ -1623,12 +1623,18 @@
                     <div class="tournament-info" style="margin-bottom: 15px;">
                         ${currentTournament.players && currentTournament.players.length > 0
                             ? currentTournament.players.map((p, i) => {
-                                const availDays = p.availability?.map(a => a.dayLabel).join(', ') || '';
+                                // Group availability by day
+                                const availByDay = {};
+                                p.availability?.forEach(a => {
+                                    if (!availByDay[a.dayLabel]) availByDay[a.dayLabel] = [];
+                                    availByDay[a.dayLabel].push(`${a.startTime}-${a.endTime}`);
+                                });
+                                const availText = Object.entries(availByDay)
+                                    .map(([day, periods]) => `${day} (${periods.join(', ')})`)
+                                    .join('; ') || 'Não informado';
+
                                 // Handle both old (category) and new (categories) formats
                                 const playerCategories = p.categories || (p.category ? [p.category] : []);
-                                const categoriesText = playerCategories.length > 1
-                                    ? `${playerCategories.length} categorias`
-                                    : playerCategories[0] || 'Sem categoria';
                                 const categoriesBadges = playerCategories.map(cat =>
                                     `<span class="badge badge-info" style="margin-right: 5px;">${cat}</span>`
                                 ).join('');
@@ -1641,7 +1647,7 @@
                                         <div style="margin-bottom: 5px;">
                                             ${categoriesBadges}
                                         </div>
-                                        <small>📅 Disponível: ${availDays || 'Não informado'}</small>
+                                        <small>📅 ${availText}</small>
                                     </div>
                                     <div style="display: flex; gap: 5px;">
                                         <button class="btn btn-sm" onclick="editPlayerFromTournament(${p.id})" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">✏️ Editar</button>
@@ -1681,23 +1687,64 @@
                 </div>
             `).join('');
 
-            // Create availability checkboxes
+            // Create availability checkboxes with multiple periods support
             const availContainer = document.getElementById('modalPlayerAvailability');
             availContainer.innerHTML = daysOfWeek.map(day => `
                 <div class="availability-item">
                     <input type="checkbox" id="modalPlayer_${day.id}" onchange="toggleModalDayAvailability('${day.id}')">
-                    <label for="modalPlayer_${day.id}" style="margin: 0; cursor: pointer;">${day.label}</label>
+                    <label for="modalPlayer_${day.id}" style="margin: 0; cursor: pointer; font-weight: 600;">${day.label}</label>
                 </div>
-                <div id="modalPlayer_${day.id}_times" class="hidden">
-                    <div class="time-inputs">
-                        <input type="time" id="modalPlayer_${day.id}_start" value="08:00">
-                        <input type="time" id="modalPlayer_${day.id}_end" value="18:00">
-                    </div>
+                <div id="modalPlayer_${day.id}_times" class="hidden" style="margin-left: 25px; margin-bottom: 10px;">
+                    <div id="modalPlayer_${day.id}_periods"></div>
+                    <button type="button" class="btn btn-sm" onclick="addTimePeriod('${day.id}')" style="margin-top: 5px; font-size: 0.85em;">➕ Adicionar Horário</button>
                 </div>
             `).join('');
 
             // Show modal
             document.getElementById('addPlayerModal').classList.add('active');
+        }
+
+        function addTimePeriod(dayId) {
+            const periodsContainer = document.getElementById(`modalPlayer_${dayId}_periods`);
+            const periodId = Date.now();
+
+            const periodDiv = document.createElement('div');
+            periodDiv.id = `period_${dayId}_${periodId}`;
+            periodDiv.className = 'time-inputs';
+            periodDiv.style.marginBottom = '8px';
+            periodDiv.innerHTML = `
+                <input type="time" class="period-start" value="08:00">
+                <span style="margin: 0 5px;">até</span>
+                <input type="time" class="period-end" value="18:00">
+                <button type="button" class="btn btn-danger btn-xs" onclick="removeTimePeriod('${dayId}', ${periodId})" style="margin-left: 5px;">🗑️</button>
+            `;
+
+            periodsContainer.appendChild(periodDiv);
+        }
+
+        function removeTimePeriod(dayId, periodId) {
+            const periodDiv = document.getElementById(`period_${dayId}_${periodId}`);
+            if (periodDiv) {
+                periodDiv.remove();
+            }
+        }
+
+        function toggleModalDayAvailability(dayId) {
+            const checkbox = document.getElementById(`modalPlayer_${dayId}`);
+            const timesDiv = document.getElementById(`modalPlayer_${dayId}_times`);
+            const periodsContainer = document.getElementById(`modalPlayer_${dayId}_periods`);
+
+            if (checkbox.checked) {
+                timesDiv.classList.remove('hidden');
+                // Add first period if none exists
+                if (periodsContainer.children.length === 0) {
+                    addTimePeriod(dayId);
+                }
+            } else {
+                timesDiv.classList.add('hidden');
+                // Clear all periods
+                periodsContainer.innerHTML = '';
+            }
         }
 
         function editPlayerFromTournament(playerId) {
@@ -1723,25 +1770,46 @@
             // Fill name
             document.getElementById('modalPlayerName').value = player.name;
 
-            // Create availability checkboxes
+            // Create availability checkboxes with multiple periods support
             const availContainer = document.getElementById('modalPlayerAvailability');
             availContainer.innerHTML = daysOfWeek.map(day => {
-                const dayAvail = player.availability?.find(a => a.day === day.id);
-                const isChecked = !!dayAvail;
+                const dayPeriods = player.availability?.filter(a => a.day === day.id) || [];
+                const isChecked = dayPeriods.length > 0;
 
                 return `
                     <div class="availability-item">
                         <input type="checkbox" id="modalPlayer_${day.id}" ${isChecked ? 'checked' : ''} onchange="toggleModalDayAvailability('${day.id}')">
-                        <label for="modalPlayer_${day.id}" style="margin: 0; cursor: pointer;">${day.label}</label>
+                        <label for="modalPlayer_${day.id}" style="margin: 0; cursor: pointer; font-weight: 600;">${day.label}</label>
                     </div>
-                    <div id="modalPlayer_${day.id}_times" class="${isChecked ? '' : 'hidden'}">
-                        <div class="time-inputs">
-                            <input type="time" id="modalPlayer_${day.id}_start" value="${dayAvail?.startTime || '08:00'}">
-                            <input type="time" id="modalPlayer_${day.id}_end" value="${dayAvail?.endTime || '18:00'}">
-                        </div>
+                    <div id="modalPlayer_${day.id}_times" class="${isChecked ? '' : 'hidden'}" style="margin-left: 25px; margin-bottom: 10px;">
+                        <div id="modalPlayer_${day.id}_periods"></div>
+                        <button type="button" class="btn btn-sm" onclick="addTimePeriod('${day.id}')" style="margin-top: 5px; font-size: 0.85em;">➕ Adicionar Horário</button>
                     </div>
                 `;
             }).join('');
+
+            // Populate existing periods for each day
+            daysOfWeek.forEach(day => {
+                const dayPeriods = player.availability?.filter(a => a.day === day.id) || [];
+                const periodsContainer = document.getElementById(`modalPlayer_${day.id}_periods`);
+
+                if (dayPeriods.length > 0 && periodsContainer) {
+                    dayPeriods.forEach(period => {
+                        const periodId = Date.now() + Math.random();
+                        const periodDiv = document.createElement('div');
+                        periodDiv.id = `period_${day.id}_${periodId}`;
+                        periodDiv.className = 'time-inputs';
+                        periodDiv.style.marginBottom = '8px';
+                        periodDiv.innerHTML = `
+                            <input type="time" class="period-start" value="${period.startTime}">
+                            <span style="margin: 0 5px;">até</span>
+                            <input type="time" class="period-end" value="${period.endTime}">
+                            <button type="button" class="btn btn-danger btn-xs" onclick="removeTimePeriod('${day.id}', ${periodId})" style="margin-left: 5px;">🗑️</button>
+                        `;
+                        periodsContainer.appendChild(periodDiv);
+                    });
+                }
+            });
 
             // Show modal
             document.getElementById('addPlayerModal').classList.add('active');
@@ -1756,17 +1824,6 @@
                 const checkbox = document.getElementById(`modalCat_${cat.replace(/\s+/g, '_')}`);
                 if (checkbox) checkbox.checked = false;
             });
-        }
-
-        function toggleModalDayAvailability(dayId) {
-            const checkbox = document.getElementById(`modalPlayer_${dayId}`);
-            const timesDiv = document.getElementById(`modalPlayer_${dayId}_times`);
-
-            if (checkbox.checked) {
-                timesDiv.classList.remove('hidden');
-            } else {
-                timesDiv.classList.add('hidden');
-            }
         }
 
         function addPlayerToTournament(event) {
@@ -1793,19 +1850,26 @@
                 return;
             }
 
-            // Get availability
+            // Get availability - support multiple periods per day
             const availability = [];
             daysOfWeek.forEach(day => {
                 const checkbox = document.getElementById(`modalPlayer_${day.id}`);
                 if (checkbox && checkbox.checked) {
-                    const startTime = document.getElementById(`modalPlayer_${day.id}_start`).value;
-                    const endTime = document.getElementById(`modalPlayer_${day.id}_end`).value;
+                    const periodsContainer = document.getElementById(`modalPlayer_${day.id}_periods`);
+                    const periodDivs = periodsContainer.querySelectorAll('.time-inputs');
 
-                    availability.push({
-                        day: day.id,
-                        dayLabel: day.label,
-                        startTime: startTime || '08:00',
-                        endTime: endTime || '18:00'
+                    periodDivs.forEach(periodDiv => {
+                        const startInput = periodDiv.querySelector('.period-start');
+                        const endInput = periodDiv.querySelector('.period-end');
+
+                        if (startInput && endInput) {
+                            availability.push({
+                                day: day.id,
+                                dayLabel: day.label,
+                                startTime: startInput.value || '08:00',
+                                endTime: endInput.value || '18:00'
+                            });
+                        }
                     });
                 }
             });
@@ -1897,44 +1961,161 @@
                 return;
             }
 
-            // Test players with multiple categories
+            // Test players with multiple categories AND multiple time periods per day
             const testPlayers = [
-                { name: 'João Silva', categories: ['Iniciantes', '5ª Classe'], days: ['monday', 'wednesday', 'friday'] },
-                { name: 'Maria Santos', categories: ['Iniciantes', '5ª Classe'], days: ['monday', 'wednesday', 'saturday'] },
-                { name: 'Pedro Costa', categories: ['Iniciantes'], days: ['tuesday', 'thursday', 'saturday'] },
-                { name: 'Ana Oliveira', categories: ['Iniciantes'], days: ['monday', 'wednesday', 'friday'] },
+                { name: 'João Silva', categories: ['Iniciantes', '5ª Classe'],
+                  schedule: [
+                      { day: 'monday', periods: [{start: '08:00', end: '12:00'}, {start: '18:00', end: '22:00'}] },
+                      { day: 'wednesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'friday', periods: [{start: '14:00', end: '22:00'}] }
+                  ]
+                },
+                { name: 'Maria Santos', categories: ['Iniciantes', '5ª Classe'],
+                  schedule: [
+                      { day: 'monday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'wednesday', periods: [{start: '08:00', end: '12:00'}, {start: '19:00', end: '22:00'}] },
+                      { day: 'saturday', periods: [{start: '08:00', end: '20:00'}] }
+                  ]
+                },
+                { name: 'Pedro Costa', categories: ['Iniciantes'],
+                  schedule: [
+                      { day: 'tuesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'thursday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'saturday', periods: [{start: '08:00', end: '20:00'}] }
+                  ]
+                },
+                { name: 'Ana Oliveira', categories: ['Iniciantes'],
+                  schedule: [
+                      { day: 'monday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'wednesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'friday', periods: [{start: '09:00', end: '21:00'}] }
+                  ]
+                },
 
-                { name: 'Carlos Ferreira', categories: ['5ª Classe', '4ª Classe'], days: ['monday', 'wednesday', 'friday'] },
-                { name: 'Juliana Lima', categories: ['5ª Classe'], days: ['tuesday', 'thursday', 'saturday'] },
-                { name: 'Roberto Alves', categories: ['5ª Classe'], days: ['monday', 'wednesday', 'friday'] },
-                { name: 'Fernanda Souza', categories: ['5ª Classe'], days: ['tuesday', 'thursday'] },
+                { name: 'Carlos Ferreira', categories: ['5ª Classe', '4ª Classe'],
+                  schedule: [
+                      { day: 'monday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'wednesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'friday', periods: [{start: '09:00', end: '21:00'}] }
+                  ]
+                },
+                { name: 'Juliana Lima', categories: ['5ª Classe'],
+                  schedule: [
+                      { day: 'tuesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'thursday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'saturday', periods: [{start: '08:00', end: '20:00'}] }
+                  ]
+                },
+                { name: 'Roberto Alves', categories: ['5ª Classe'],
+                  schedule: [
+                      { day: 'monday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'wednesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'friday', periods: [{start: '09:00', end: '21:00'}] }
+                  ]
+                },
+                { name: 'Fernanda Souza', categories: ['5ª Classe'],
+                  schedule: [
+                      { day: 'tuesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'thursday', periods: [{start: '09:00', end: '21:00'}] }
+                  ]
+                },
 
-                { name: 'Paulo Mendes', categories: ['4ª Classe', '3ª Classe'], days: ['monday', 'wednesday', 'friday'] },
-                { name: 'Mariana Rocha', categories: ['4ª Classe'], days: ['tuesday', 'thursday', 'saturday'] },
-                { name: 'Ricardo Dias', categories: ['4ª Classe'], days: ['monday', 'friday'] },
-                { name: 'Camila Ribeiro', categories: ['4ª Classe'], days: ['wednesday', 'saturday'] },
+                { name: 'Paulo Mendes', categories: ['4ª Classe', '3ª Classe'],
+                  schedule: [
+                      { day: 'monday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'wednesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'friday', periods: [{start: '09:00', end: '21:00'}] }
+                  ]
+                },
+                { name: 'Mariana Rocha', categories: ['4ª Classe'],
+                  schedule: [
+                      { day: 'tuesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'thursday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'saturday', periods: [{start: '08:00', end: '20:00'}] }
+                  ]
+                },
+                { name: 'Ricardo Dias', categories: ['4ª Classe'],
+                  schedule: [
+                      { day: 'monday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'friday', periods: [{start: '09:00', end: '21:00'}] }
+                  ]
+                },
+                { name: 'Camila Ribeiro', categories: ['4ª Classe'],
+                  schedule: [
+                      { day: 'wednesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'saturday', periods: [{start: '08:00', end: '20:00'}] }
+                  ]
+                },
 
-                { name: 'André Martins', categories: ['3ª Classe', '2ª Classe'], days: ['monday', 'wednesday', 'friday'] },
-                { name: 'Patricia Gomes', categories: ['3ª Classe'], days: ['tuesday', 'thursday'] },
-                { name: 'Felipe Barbosa', categories: ['3ª Classe'], days: ['monday', 'saturday'] },
-                { name: 'Larissa Castro', categories: ['3ª Classe'], days: ['wednesday', 'friday'] },
+                { name: 'André Martins', categories: ['3ª Classe', '2ª Classe'],
+                  schedule: [
+                      { day: 'monday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'wednesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'friday', periods: [{start: '09:00', end: '21:00'}] }
+                  ]
+                },
+                { name: 'Patricia Gomes', categories: ['3ª Classe'],
+                  schedule: [
+                      { day: 'tuesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'thursday', periods: [{start: '09:00', end: '21:00'}] }
+                  ]
+                },
+                { name: 'Felipe Barbosa', categories: ['3ª Classe'],
+                  schedule: [
+                      { day: 'monday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'saturday', periods: [{start: '08:00', end: '20:00'}] }
+                  ]
+                },
+                { name: 'Larissa Castro', categories: ['3ª Classe'],
+                  schedule: [
+                      { day: 'wednesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'friday', periods: [{start: '09:00', end: '21:00'}] }
+                  ]
+                },
 
-                { name: 'Gabriel Pinto', categories: ['2ª Classe', '1ª Classe'], days: ['monday', 'wednesday', 'friday'] },
-                { name: 'Beatriz Cardoso', categories: ['2ª Classe'], days: ['tuesday', 'thursday', 'saturday'] },
-                { name: 'Lucas Nunes', categories: ['1ª Classe', 'Pro Classe'], days: ['monday', 'wednesday', 'friday'] },
-                { name: 'Rafaela Teixeira', categories: ['Pro Classe'], days: ['tuesday', 'thursday', 'saturday'] }
+                { name: 'Gabriel Pinto', categories: ['2ª Classe', '1ª Classe'],
+                  schedule: [
+                      { day: 'monday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'wednesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'friday', periods: [{start: '09:00', end: '21:00'}] }
+                  ]
+                },
+                { name: 'Beatriz Cardoso', categories: ['2ª Classe'],
+                  schedule: [
+                      { day: 'tuesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'thursday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'saturday', periods: [{start: '08:00', end: '20:00'}] }
+                  ]
+                },
+                { name: 'Lucas Nunes', categories: ['1ª Classe', 'Pro Classe'],
+                  schedule: [
+                      { day: 'monday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'wednesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'friday', periods: [{start: '09:00', end: '21:00'}] }
+                  ]
+                },
+                { name: 'Rafaela Teixeira', categories: ['Pro Classe'],
+                  schedule: [
+                      { day: 'tuesday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'thursday', periods: [{start: '09:00', end: '21:00'}] },
+                      { day: 'saturday', periods: [{start: '08:00', end: '20:00'}] }
+                  ]
+                }
             ];
 
             // Add players to tournament
             testPlayers.forEach((tp, index) => {
-                const availability = tp.days.map(dayId => {
-                    const day = daysOfWeek.find(d => d.id === dayId);
-                    return {
-                        day: dayId,
-                        dayLabel: day.label,
-                        startTime: '09:00',
-                        endTime: '21:00'
-                    };
+                const availability = [];
+                tp.schedule.forEach(daySchedule => {
+                    const day = daysOfWeek.find(d => d.id === daySchedule.day);
+                    daySchedule.periods.forEach(period => {
+                        availability.push({
+                            day: daySchedule.day,
+                            dayLabel: day.label,
+                            startTime: period.start,
+                            endTime: period.end
+                        });
+                    });
                 });
 
                 currentTournament.players.push({
@@ -2607,20 +2788,27 @@
             let score = 100;
 
             // Check if both players are available
-            const player1Avail = match.player1.availability?.find(a => a.day === slot.dayOfWeek);
-            const player2Avail = match.player2.availability?.find(a => a.day === slot.dayOfWeek);
+            // NOTE: A player can have multiple time periods per day
+            const player1AvailDay = match.player1.availability?.filter(a => a.day === slot.dayOfWeek) || [];
+            const player2AvailDay = match.player2.availability?.filter(a => a.day === slot.dayOfWeek) || [];
 
-            if (!player1Avail || !player2Avail) {
-                return -1; // Hard constraint violation
+            if (player1AvailDay.length === 0 || player2AvailDay.length === 0) {
+                return -1; // Hard constraint violation - no availability on this day
             }
 
-            // Check time ranges
+            // Check if slot time is within ANY of the available periods
             const slotTime = slot.time;
-            if (slotTime < player1Avail.startTime || slotTime >= player1Avail.endTime) {
-                return -1;
-            }
-            if (slotTime < player2Avail.startTime || slotTime >= player2Avail.endTime) {
-                return -1;
+
+            const player1HasSlot = player1AvailDay.some(avail =>
+                slotTime >= avail.startTime && slotTime < avail.endTime
+            );
+
+            const player2HasSlot = player2AvailDay.some(avail =>
+                slotTime >= avail.startTime && slotTime < avail.endTime
+            );
+
+            if (!player1HasSlot || !player2HasSlot) {
+                return -1; // Hard constraint violation - time not in available range
             }
 
             // Prefer earlier dates
