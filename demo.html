@@ -1518,6 +1518,139 @@
             background: #2a5d8a;
         }
 
+        /* Mobile Menu */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+
+        .mobile-menu-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .mobile-tabs-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .mobile-tabs-overlay.active {
+            display: block;
+        }
+
+        .mobile-tabs-menu {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 1001;
+        }
+
+        .mobile-tabs-menu.active {
+            transform: translateY(0);
+        }
+
+        .mobile-tabs-menu .tab {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            text-align: left;
+            padding: 15px 20px;
+            border-radius: 10px;
+        }
+
+        .dark-mode .mobile-tabs-menu {
+            background: #0f3460;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .tabs:not(.mobile-tabs-menu) {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+
+            .tabs:not(.mobile-tabs-menu)::-webkit-scrollbar {
+                height: 4px;
+            }
+
+            .tabs:not(.mobile-tabs-menu)::-webkit-scrollbar-thumb {
+                background: #667eea;
+                border-radius: 2px;
+            }
+
+            .calendar-grid {
+                font-size: 0.7em;
+                grid-template-columns: 40px repeat(7, 1fr);
+                overflow-x: auto;
+            }
+
+            .calendar-match {
+                font-size: 0.7em;
+                padding: 4px;
+            }
+
+            .calendar-match-players,
+            .calendar-match-details {
+                font-size: 0.85em;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-card[style*="grid-column: span 2"] {
+                grid-column: span 1 !important;
+            }
+
+            .modal-content {
+                max-width: 95%;
+                padding: 20px;
+                max-height: 95vh;
+            }
+
+            .theme-toggle {
+                bottom: 90px;
+            }
+
+            .breadcrumbs {
+                font-size: 0.8em;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
         @media (max-width: 768px) {
             .tournament-grid {
                 grid-template-columns: 1fr;
@@ -1936,6 +2069,35 @@
         </div>
     </div>
 
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" id="mobileMenuBtn">
+        ☰
+    </button>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-tabs-overlay" id="mobileTabsOverlay" onclick="closeMobileMenu()"></div>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-tabs-menu" id="mobileTabsMenu">
+        <h3 style="margin-bottom: 20px;">Menu de Navegação</h3>
+        <button class="tab" onclick="showTab('myTournaments'); closeMobileMenu();">🏆 Meus Torneios</button>
+        <button class="tab" onclick="showTab('createTournament'); closeMobileMenu();">➕ Criar Torneio</button>
+        <button class="tab" onclick="showTab('profile'); closeMobileMenu();">👤 Perfil</button>
+
+        <div id="mobileTournamentTabs" style="display: none;">
+            <hr style="margin: 20px 0; border-color: #ddd;">
+            <h3 style="margin-bottom: 20px;">Torneio</h3>
+            <button class="tab" onclick="closeTournamentDetail(); closeMobileMenu();">← Voltar</button>
+            <button class="tab" onclick="showTournamentTab('overview'); closeMobileMenu();">📊 Visão Geral</button>
+            <button class="tab" onclick="showTournamentTab('courts'); closeMobileMenu();">🏟️ Quadras</button>
+            <button class="tab" onclick="showTournamentTab('bracket'); closeMobileMenu();">🏆 Chaveamento</button>
+            <button class="tab" onclick="showTournamentTab('schedule'); closeMobileMenu();">📅 Agenda</button>
+            <button class="tab" onclick="showTournamentTab('conflicts'); closeMobileMenu();">⚠️ Conflitos</button>
+            <button class="tab" onclick="showTournamentTab('results'); closeMobileMenu();">📊 Resultados</button>
+            <button class="tab" onclick="showTournamentTab('standings'); closeMobileMenu();">🏅 Classificação</button>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10000;"></div>
 
@@ -2017,6 +2179,21 @@
         if (localStorage.getItem('darkMode') === 'true') {
             document.body.classList.add('dark-mode');
             document.getElementById('themeIcon').textContent = '☀️';
+        }
+
+        // ==================== MOBILE MENU ====================
+        function toggleMobileMenu() {
+            const overlay = document.getElementById('mobileTabsOverlay');
+            const menu = document.getElementById('mobileTabsMenu');
+            overlay.classList.toggle('active');
+            menu.classList.toggle('active');
+        }
+
+        function closeMobileMenu() {
+            const overlay = document.getElementById('mobileTabsOverlay');
+            const menu = document.getElementById('mobileTabsMenu');
+            overlay.classList.remove('active');
+            menu.classList.remove('active');
         }
 
         // ==================== BREADCRUMBS ====================
@@ -2430,6 +2607,9 @@
             document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
             document.getElementById('tournamentDetail').classList.add('active');
 
+            // Show tournament tabs in mobile menu
+            document.getElementById('mobileTournamentTabs').style.display = 'block';
+
             // Show overview tab by default
             showTournamentTab('overview');
         }
@@ -2438,6 +2618,9 @@
             // Show main tabs, hide tournament tabs
             document.getElementById('mainTabs').classList.remove('hidden');
             document.getElementById('tournamentTabs').classList.add('hidden');
+
+            // Hide tournament tabs in mobile menu
+            document.getElementById('mobileTournamentTabs').style.display = 'none';
 
             // Save any changes
             saveTournament();
