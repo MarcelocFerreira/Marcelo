@@ -1162,6 +1162,89 @@
             border-color: #667eea;
         }
 
+        /* Tooltips */
+        [data-tooltip] {
+            position: relative;
+        }
+
+        [data-tooltip]::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-8px);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 1000;
+        }
+
+        [data-tooltip]::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-2px);
+            border: 6px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 1000;
+        }
+
+        [data-tooltip]:hover::before,
+        [data-tooltip]:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        [data-tooltip-position="right"]::before {
+            bottom: auto;
+            left: 100%;
+            top: 50%;
+            transform: translateX(8px) translateY(-50%);
+        }
+
+        [data-tooltip-position="right"]::after {
+            bottom: auto;
+            left: 100%;
+            top: 50%;
+            transform: translateX(2px) translateY(-50%) rotate(-90deg);
+        }
+
+        [data-tooltip-position="right"]:hover::before,
+        [data-tooltip-position="right"]:hover::after {
+            transform: translateX(8px) translateY(-50%);
+        }
+
+        [data-tooltip-position="left"]::before {
+            bottom: auto;
+            left: auto;
+            right: 100%;
+            top: 50%;
+            transform: translateX(-8px) translateY(-50%);
+        }
+
+        [data-tooltip-position="left"]::after {
+            bottom: auto;
+            left: auto;
+            right: 100%;
+            top: 50%;
+            transform: translateX(-2px) translateY(-50%) rotate(90deg);
+        }
+
+        [data-tooltip-position="left"]:hover::before,
+        [data-tooltip-position="left"]:hover::after {
+            transform: translateX(-8px) translateY(-50%);
+        }
+
         @media (max-width: 768px) {
             .tournament-grid {
                 grid-template-columns: 1fr;
@@ -1270,14 +1353,14 @@
                     <div class="user-name" id="userName"></div>
                     <div class="user-email" id="userEmail"></div>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="logout()">Sair</button>
+                <button class="btn btn-secondary btn-sm" onclick="logout()" data-tooltip="Sair da conta">Sair</button>
             </div>
         </header>
 
         <div class="tabs" id="mainTabs">
-            <button class="tab active" onclick="showTab('myTournaments')">🏆 Meus Torneios</button>
-            <button class="tab" onclick="showTab('createTournament')">➕ Criar Torneio</button>
-            <button class="tab" onclick="showTab('profile')">👤 Perfil</button>
+            <button class="tab active" onclick="showTab('myTournaments')" data-tooltip="Ver todos os seus torneios">🏆 Meus Torneios</button>
+            <button class="tab" onclick="showTab('createTournament')" data-tooltip="Criar novo torneio">➕ Criar Torneio</button>
+            <button class="tab" onclick="showTab('profile')" data-tooltip="Editar seu perfil">👤 Perfil</button>
         </div>
 
         <!-- Breadcrumbs -->
@@ -1285,14 +1368,14 @@
 
         <!-- Tournament Detail Tabs (Hidden by default) -->
         <div class="tabs hidden" id="tournamentTabs">
-            <button class="btn btn-secondary btn-sm" onclick="closeTournamentDetail()">← Voltar</button>
-            <button class="tab active" onclick="showTournamentTab('overview')">📊 Visão Geral</button>
-            <button class="tab" onclick="showTournamentTab('courts')">🏟️ Quadras</button>
-            <button class="tab" onclick="showTournamentTab('bracket')">🏆 Chaveamento</button>
-            <button class="tab" onclick="showTournamentTab('schedule')">📅 Agenda</button>
-            <button class="tab" onclick="showTournamentTab('conflicts')">⚠️ Conflitos</button>
-            <button class="tab" onclick="showTournamentTab('results')">📊 Resultados</button>
-            <button class="tab" onclick="showTournamentTab('standings')">🏅 Classificação</button>
+            <button class="btn btn-secondary btn-sm" onclick="closeTournamentDetail()" data-tooltip="Voltar para lista de torneios">← Voltar</button>
+            <button class="tab active" onclick="showTournamentTab('overview')" data-tooltip="Informações e jogadores">📊 Visão Geral</button>
+            <button class="tab" onclick="showTournamentTab('courts')" data-tooltip="Gerenciar quadras disponíveis">🏟️ Quadras</button>
+            <button class="tab" onclick="showTournamentTab('bracket')" data-tooltip="Gerar e visualizar chaveamento">🏆 Chaveamento</button>
+            <button class="tab" onclick="showTournamentTab('schedule')" data-tooltip="Agendar jogos automaticamente">📅 Agenda</button>
+            <button class="tab" onclick="showTournamentTab('conflicts')" data-tooltip="Resolver conflitos de agendamento">⚠️ Conflitos</button>
+            <button class="tab" onclick="showTournamentTab('results')" data-tooltip="Registrar resultados dos jogos">📊 Resultados</button>
+            <button class="tab" onclick="showTournamentTab('standings')" data-tooltip="Ver classificação dos grupos">🏅 Classificação</button>
         </div>
 
         <!-- My Tournaments -->
@@ -1519,7 +1602,7 @@
     </div>
 
     <!-- Dark Mode Toggle -->
-    <button class="theme-toggle" onclick="toggleDarkMode()" title="Alternar tema escuro/claro">
+    <button class="theme-toggle" onclick="toggleDarkMode()" data-tooltip="Alternar tema escuro/claro" data-tooltip-position="left">
         <span id="themeIcon">🌙</span>
     </button>
 
