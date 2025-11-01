@@ -1245,6 +1245,146 @@
             transform: translateX(-8px) translateY(-50%);
         }
 
+        /* Calendar View */
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .view-toggle button {
+            flex: 1;
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .view-toggle button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .view-toggle button:hover:not(.active) {
+            background: #f5f5f5;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(7, 1fr);
+            gap: 1px;
+            background: #e0e0e0;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            background: #667eea;
+            color: white;
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .calendar-time {
+            background: #f5f5f5;
+            padding: 10px 5px;
+            text-align: center;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .calendar-cell {
+            background: white;
+            min-height: 80px;
+            padding: 5px;
+            position: relative;
+            transition: background 0.3s;
+        }
+
+        .calendar-cell:hover {
+            background: #f9f9f9;
+        }
+
+        .calendar-match {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .calendar-match:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .calendar-match-players {
+            font-weight: 600;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .calendar-match-details {
+            font-size: 0.85em;
+            opacity: 0.9;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .dark-mode .calendar-grid {
+            background: #2a5d8a;
+            border-color: #2a5d8a;
+        }
+
+        .dark-mode .calendar-time {
+            background: #1a4d7a;
+            color: #aaa;
+        }
+
+        .dark-mode .calendar-cell {
+            background: #0f3460;
+        }
+
+        .dark-mode .calendar-cell:hover {
+            background: #1a4d7a;
+        }
+
+        .dark-mode .view-toggle button {
+            background: #1a4d7a;
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .dark-mode .view-toggle button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        @media (max-width: 1200px) {
+            .calendar-grid {
+                grid-template-columns: 60px repeat(7, 1fr);
+                font-size: 0.85em;
+            }
+        }
+
         @media (max-width: 768px) {
             .tournament-grid {
                 grid-template-columns: 1fr;
@@ -3527,6 +3667,8 @@
             return alternatives.sort((a, b) => b.score - a.score).slice(0, 5);
         }
 
+        let scheduleViewMode = 'list'; // 'list' or 'calendar'
+
         function displaySchedule() {
             const container = document.getElementById('scheduleDisplay');
 
@@ -3535,6 +3677,33 @@
                 return;
             }
 
+            // View toggle
+            let html = `
+                <div class="view-toggle">
+                    <button class="${scheduleViewMode === 'list' ? 'active' : ''}" onclick="setScheduleView('list')" data-tooltip="Ver em lista">
+                        📋 Lista
+                    </button>
+                    <button class="${scheduleViewMode === 'calendar' ? 'active' : ''}" onclick="setScheduleView('calendar')" data-tooltip="Ver em calendário">
+                        📅 Calendário
+                    </button>
+                </div>
+            `;
+
+            if (scheduleViewMode === 'calendar') {
+                html += generateCalendarView();
+            } else {
+                html += generateListView();
+            }
+
+            container.innerHTML = html;
+        }
+
+        function setScheduleView(mode) {
+            scheduleViewMode = mode;
+            displaySchedule();
+        }
+
+        function generateListView() {
             // Group matches by date
             const matchesByDate = {};
             currentTournament.matches.forEach(match => {
@@ -3544,7 +3713,7 @@
                 matchesByDate[match.date].push(match);
             });
 
-            let html = '<h3>Agenda de Jogos</h3>';
+            let html = '<h3 style="margin-top: 20px;">Agenda de Jogos</h3>';
 
             Object.keys(matchesByDate).sort().forEach(date => {
                 const matches = matchesByDate[date].sort((a, b) => a.time.localeCompare(b.time));
@@ -3575,7 +3744,62 @@
                 });
             });
 
-            container.innerHTML = html;
+            return html;
+        }
+
+        function generateCalendarView() {
+            // Get all unique dates and times
+            const dates = [...new Set(currentTournament.matches.map(m => m.date))].sort();
+            const times = [...new Set(currentTournament.matches.map(m => m.time))].sort();
+
+            // Create a map for quick lookup
+            const matchMap = {};
+            currentTournament.matches.forEach(match => {
+                const key = `${match.date}_${match.time}`;
+                if (!matchMap[key]) matchMap[key] = [];
+                matchMap[key].push(match);
+            });
+
+            const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+            let html = '<div class="calendar-grid">';
+
+            // Header row
+            html += '<div class="calendar-header">Horário</div>';
+            dates.forEach(date => {
+                const d = new Date(date + 'T00:00:00');
+                const dayName = daysOfWeek[d.getDay()];
+                const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                html += `<div class="calendar-header">${dayName}<br/>${dateStr}</div>`;
+            });
+
+            // Time rows
+            times.forEach(time => {
+                html += `<div class="calendar-time">${time}</div>`;
+
+                dates.forEach(date => {
+                    const key = `${date}_${time}`;
+                    const matches = matchMap[key] || [];
+
+                    html += '<div class="calendar-cell">';
+                    matches.forEach(match => {
+                        html += `
+                            <div class="calendar-match" title="${match.player1.name} vs ${match.player2.name}">
+                                <div class="calendar-match-players">
+                                    ${match.player1.name} vs ${match.player2.name}
+                                </div>
+                                <div class="calendar-match-details">
+                                    <span>🏟️ ${match.court.name}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                });
+            });
+
+            html += '</div>';
+            return html;
         }
 
         function clearSchedule() {
