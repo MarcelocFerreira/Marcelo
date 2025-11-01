@@ -2114,7 +2114,40 @@
         <span id="themeIcon">🌙</span>
     </button>
 
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
+        // ==================== SUPABASE CONFIGURATION ====================
+
+        // IMPORTANTE: Configure suas credenciais do Supabase aqui
+        // 1. Crie uma conta em https://supabase.com
+        // 2. Crie um novo projeto
+        // 3. Copie a URL e a chave anônima (anon key) do seu projeto
+        // 4. Cole abaixo substituindo os valores de exemplo
+
+        const SUPABASE_URL = 'https://seu-projeto.supabase.co';
+        const SUPABASE_ANON_KEY = 'sua-chave-anonima-aqui';
+
+        // Inicializar cliente Supabase (será null se as credenciais não forem configuradas)
+        let supabaseClient = null;
+        let useSupabase = false;
+
+        try {
+            if (SUPABASE_URL !== 'https://seu-projeto.supabase.co' &&
+                SUPABASE_ANON_KEY !== 'sua-chave-anonima-aqui' &&
+                typeof supabase !== 'undefined') {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                useSupabase = true;
+                console.log('✅ Supabase conectado com sucesso!');
+            } else {
+                console.warn('⚠️ Supabase não configurado. Usando localStorage como fallback.');
+            }
+        } catch (error) {
+            console.warn('⚠️ Erro ao conectar com Supabase:', error.message);
+            console.warn('Usando localStorage como fallback.');
+        }
+
         // ==================== GLOBAL STATE ====================
 
         let categories = ['Iniciantes', '5ª Classe', '4ª Classe', '3ª Classe', '2ª Classe', '1ª Classe', 'Pro Classe'];
@@ -2275,6 +2308,200 @@
             }
         }
 
+        // ==================== SUPABASE MANAGER ====================
+
+        class SupabaseManager {
+            // ========== AUTHENTICATION ==========
+
+            static async signUp(email, password, metadata = {}) {
+                if (!useSupabase) {
+                    // Fallback para localStorage
+                    const users = StorageManager.getUsers();
+                    if (users.find(u => u.email === email)) {
+                        throw new Error('Este email já está cadastrado!');
+                    }
+                    const newUser = {
+                        id: 'user_' + Date.now(),
+                        email,
+                        password,
+                        ...metadata,
+                        createdAt: new Date().toISOString()
+                    };
+                    users.push(newUser);
+                    StorageManager.saveUsers(users);
+                    return { user: newUser, error: null };
+                }
+
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: metadata
+                    }
+                });
+
+                if (error) throw error;
+
+                // Criar perfil do usuário na tabela profiles
+                if (data.user) {
+                    await supabaseClient.from('profiles').insert({
+                        id: data.user.id,
+                        email: data.user.email,
+                        ...metadata
+                    });
+                }
+
+                return { user: data.user, error: null };
+            }
+
+            static async signIn(email, password) {
+                if (!useSupabase) {
+                    // Fallback para localStorage
+                    const users = StorageManager.getUsers();
+                    const user = users.find(u => u.email === email && u.password === password);
+                    if (!user) {
+                        throw new Error('Email ou senha incorretos!');
+                    }
+                    StorageManager.setCurrentUser(user.id);
+                    return { user, error: null };
+                }
+
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) throw error;
+                return { user: data.user, error: null };
+            }
+
+            static async signOut() {
+                if (!useSupabase) {
+                    StorageManager.logout();
+                    return { error: null };
+                }
+
+                const { error } = await supabaseClient.auth.signOut();
+                return { error };
+            }
+
+            static async getCurrentUser() {
+                if (!useSupabase) {
+                    return StorageManager.getCurrentUser();
+                }
+
+                const { data: { user } } = await supabaseClient.auth.getUser();
+
+                if (!user) return null;
+
+                // Buscar dados completos do perfil
+                const { data: profile } = await supabaseClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                return profile || user;
+            }
+
+            static async updateProfile(userId, updates) {
+                if (!useSupabase) {
+                    const users = StorageManager.getUsers();
+                    const index = users.findIndex(u => u.id === userId);
+                    if (index !== -1) {
+                        users[index] = { ...users[index], ...updates };
+                        StorageManager.saveUsers(users);
+                    }
+                    return { error: null };
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('profiles')
+                    .update(updates)
+                    .eq('id', userId);
+
+                return { data, error };
+            }
+
+            // ========== TOURNAMENTS ==========
+
+            static async getTournaments(userId) {
+                if (!useSupabase) {
+                    return StorageManager.getTournaments(userId);
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('tournaments')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error('Erro ao buscar torneios:', error);
+                    return [];
+                }
+
+                return data || [];
+            }
+
+            static async saveTournament(userId, tournament) {
+                if (!useSupabase) {
+                    const tournaments = StorageManager.getTournaments(userId);
+                    const index = tournaments.findIndex(t => t.id === tournament.id);
+
+                    if (index !== -1) {
+                        tournaments[index] = tournament;
+                    } else {
+                        tournaments.push(tournament);
+                    }
+
+                    StorageManager.saveTournaments(userId, tournaments);
+                    return { error: null };
+                }
+
+                const tournamentData = {
+                    id: tournament.id,
+                    user_id: userId,
+                    name: tournament.name,
+                    start_date: tournament.startDate,
+                    end_date: tournament.endDate,
+                    duration: tournament.duration,
+                    status: tournament.status,
+                    categories: tournament.categories,
+                    players: tournament.players,
+                    courts: tournament.courts,
+                    matches: tournament.matches,
+                    groups: tournament.groups,
+                    standings: tournament.standings,
+                    created_at: tournament.createdAt || new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+
+                const { data, error } = await supabaseClient
+                    .from('tournaments')
+                    .upsert(tournamentData, { onConflict: 'id' });
+
+                return { data, error };
+            }
+
+            static async deleteTournament(userId, tournamentId) {
+                if (!useSupabase) {
+                    const tournaments = StorageManager.getTournaments(userId);
+                    const filtered = tournaments.filter(t => t.id !== tournamentId);
+                    StorageManager.saveTournaments(userId, filtered);
+                    return { error: null };
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('tournaments')
+                    .delete()
+                    .eq('id', tournamentId)
+                    .eq('user_id', userId);
+
+                return { data, error };
+            }
+        }
+
         // ==================== AUTHENTICATION ====================
 
         function showLogin() {
@@ -2287,24 +2514,36 @@
             document.getElementById('registerForm').classList.remove('hidden');
         }
 
-        function login(event) {
+        async function login(event) {
             event.preventDefault();
 
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
 
-            const users = StorageManager.getUsers();
-            const user = users.find(u => u.email === email && u.password === password);
+            showLoading('Fazendo login...');
 
-            if (user) {
-                StorageManager.setCurrentUser(user.id);
-                showMainApp();
-            } else {
-                showToast('Erro', 'Email ou senha incorretos!', 'error');
+            try {
+                const { user, error } = await SupabaseManager.signIn(email, password);
+
+                if (error) {
+                    throw error;
+                }
+
+                if (user) {
+                    showToast('Sucesso', 'Login realizado com sucesso!', 'success');
+                    await showMainApp();
+                } else {
+                    showToast('Erro', 'Email ou senha incorretos!', 'error');
+                }
+            } catch (error) {
+                console.error('Erro no login:', error);
+                showToast('Erro', error.message || 'Email ou senha incorretos!', 'error');
+            } finally {
+                hideLoading();
             }
         }
 
-        function register(event) {
+        async function register(event) {
             event.preventDefault();
 
             const name = document.getElementById('registerName').value;
@@ -2318,63 +2557,81 @@
                 return;
             }
 
-            const users = StorageManager.getUsers();
+            showLoading('Criando conta...');
 
-            if (users.find(u => u.email === email)) {
-                showToast('Erro', 'Este email já está cadastrado!', 'error');
-                return;
+            try {
+                const metadata = {
+                    name,
+                    phone,
+                    organization: ''
+                };
+
+                const { user, error } = await SupabaseManager.signUp(email, password, metadata);
+
+                if (error) {
+                    throw error;
+                }
+
+                showToast('Sucesso', 'Conta criada com sucesso! Faça login para continuar.', 'success');
+                showLogin();
+
+                document.getElementById('registerForm').querySelector('form').reset();
+            } catch (error) {
+                console.error('Erro no registro:', error);
+                showToast('Erro', error.message || 'Erro ao criar conta!', 'error');
+            } finally {
+                hideLoading();
             }
-
-            const newUser = {
-                id: 'user_' + Date.now(),
-                name,
-                email,
-                phone,
-                password,
-                organization: '',
-                createdAt: new Date().toISOString()
-            };
-
-            users.push(newUser);
-            StorageManager.saveUsers(users);
-
-            showToast('Sucesso', 'Conta criada com sucesso! Faça login para continuar.', 'success');
-            showLogin();
-
-            document.getElementById('registerForm').querySelector('form').reset();
         }
 
-        function logout() {
+        async function logout() {
             if (confirm('Deseja realmente sair?')) {
-                StorageManager.logout();
-                location.reload();
+                showLoading('Saindo...');
+                try {
+                    await SupabaseManager.signOut();
+                    location.reload();
+                } catch (error) {
+                    console.error('Erro ao sair:', error);
+                    hideLoading();
+                }
             }
         }
 
         // ==================== MAIN APP ====================
 
-        function showMainApp() {
-            const user = StorageManager.getCurrentUser();
-            if (!user) {
+        async function showMainApp() {
+            showLoading('Carregando dados...');
+
+            try {
+                const user = await SupabaseManager.getCurrentUser();
+                if (!user) {
+                    showAuthScreen();
+                    hideLoading();
+                    return;
+                }
+
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+
+                document.getElementById('userName').textContent = user.name || user.email;
+                document.getElementById('userEmail').textContent = user.email;
+
+                // Initialize breadcrumbs
+                updateBreadcrumbs([
+                    { label: '🏠 Home', onClick: "showTab('myTournaments')" },
+                    { label: '🏆 Meus Torneios' }
+                ]);
+
+                await loadTournaments();
+                loadProfile();
+                updateStats();
+            } catch (error) {
+                console.error('Erro ao carregar app:', error);
+                showToast('Erro', 'Erro ao carregar dados do usuário', 'error');
                 showAuthScreen();
-                return;
+            } finally {
+                hideLoading();
             }
-
-            document.getElementById('authScreen').classList.add('hidden');
-            document.getElementById('mainApp').classList.remove('hidden');
-
-            document.getElementById('userName').textContent = user.name;
-            document.getElementById('userEmail').textContent = user.email;
-
-            // Initialize breadcrumbs
-            updateBreadcrumbs([
-                { label: '🏠 Home', onClick: "showTab('myTournaments')" },
-                { label: '🏆 Meus Torneios' }
-            ]);
-
-            loadTournaments();
-            loadProfile();
-            updateStats();
         }
 
         function showAuthScreen() {
@@ -2465,11 +2722,11 @@
             renderCategories();
         }
 
-        function loadTournaments() {
-            const user = StorageManager.getCurrentUser();
+        async function loadTournaments() {
+            const user = await SupabaseManager.getCurrentUser();
             if (!user) return;
 
-            const tournaments = StorageManager.getTournaments(user.id);
+            const tournaments = await SupabaseManager.getTournaments(user.id);
             const container = document.getElementById('tournamentsContainer');
 
             if (tournaments.length === 0) {
@@ -2546,51 +2803,67 @@
             return classes[status] || 'badge-secondary';
         }
 
-        function createTournament(event) {
+        async function createTournament(event) {
             event.preventDefault();
 
-            const user = StorageManager.getCurrentUser();
-            if (!user) return;
+            showLoading('Criando torneio...');
 
-            const tournament = {
-                id: 'tournament_' + Date.now(),
-                name: document.getElementById('tournamentName').value,
-                sport: document.getElementById('tournamentSport').value,
-                categories: [...categories],
-                format: document.getElementById('tournamentFormat').value,
-                startDate: document.getElementById('tournamentStartDate').value,
-                endDate: document.getElementById('tournamentEndDate').value,
-                duration: parseInt(document.getElementById('tournamentDuration').value),
-                breakTime: parseInt(document.getElementById('tournamentBreak').value),
-                location: document.getElementById('tournamentLocation').value,
-                notes: document.getElementById('tournamentNotes').value,
-                status: 'Rascunho',
-                players: [], // Players will be added later
-                createdAt: new Date().toISOString(),
-                courts: [],
-                teams: [],
-                matches: []
-            };
+            try {
+                const user = await SupabaseManager.getCurrentUser();
+                if (!user) {
+                    hideLoading();
+                    return;
+                }
 
-            const tournaments = StorageManager.getTournaments(user.id);
-            tournaments.push(tournament);
-            StorageManager.saveTournaments(user.id, tournaments);
+                const tournament = {
+                    id: 'tournament_' + Date.now(),
+                    name: document.getElementById('tournamentName').value,
+                    sport: document.getElementById('tournamentSport').value,
+                    categories: [...categories],
+                    format: document.getElementById('tournamentFormat').value,
+                    startDate: document.getElementById('tournamentStartDate').value,
+                    endDate: document.getElementById('tournamentEndDate').value,
+                    duration: parseInt(document.getElementById('tournamentDuration').value),
+                    breakTime: parseInt(document.getElementById('tournamentBreak').value),
+                    location: document.getElementById('tournamentLocation').value,
+                    notes: document.getElementById('tournamentNotes').value,
+                    status: 'Rascunho',
+                    players: [], // Players will be added later
+                    createdAt: new Date().toISOString(),
+                    courts: [],
+                    teams: [],
+                    matches: []
+                };
 
-            showToast('Sucesso', 'Torneio criado com sucesso! Agora você pode adicionar jogadores e inscrevê-los nas categorias.', 'success');
+                await SupabaseManager.saveTournament(user.id, tournament);
 
-            event.target.reset();
-            resetForm();
+                showToast('Sucesso', 'Torneio criado com sucesso! Agora você pode adicionar jogadores e inscrevê-los nas categorias.', 'success');
 
-            // Open the tournament automatically
-            viewTournament(tournament.id);
+                event.target.reset();
+                resetForm();
+
+                // Open the tournament automatically
+                await viewTournament(tournament.id);
+            } catch (error) {
+                console.error('Erro ao criar torneio:', error);
+                showToast('Erro', 'Erro ao criar torneio!', 'error');
+            } finally {
+                hideLoading();
+            }
         }
 
-        function viewTournament(tournamentId) {
-            const user = StorageManager.getCurrentUser();
-            const tournaments = StorageManager.getTournaments(user.id);
-            currentTournament = tournaments.find(t => t.id === tournamentId);
+        async function viewTournament(tournamentId) {
+            showLoading('Carregando torneio...');
 
-            if (!currentTournament) return;
+            try {
+                const user = await SupabaseManager.getCurrentUser();
+                const tournaments = await SupabaseManager.getTournaments(user.id);
+                currentTournament = tournaments.find(t => t.id === tournamentId);
+
+                if (!currentTournament) {
+                    hideLoading();
+                    return;
+                }
 
             // Initialize tournament data if needed
             if (!currentTournament.courts) currentTournament.courts = [];
@@ -2612,6 +2885,12 @@
 
             // Show overview tab by default
             showTournamentTab('overview');
+            } catch (error) {
+                console.error('Erro ao carregar torneio:', error);
+                showToast('Erro', 'Erro ao carregar torneio!', 'error');
+            } finally {
+                hideLoading();
+            }
         }
 
         function closeTournamentDetail() {
@@ -2680,32 +2959,38 @@
             }
         }
 
-        function saveTournament() {
+        async function saveTournament() {
             if (!currentTournament) return;
 
-            const user = StorageManager.getCurrentUser();
-            const tournaments = StorageManager.getTournaments(user.id);
-            const index = tournaments.findIndex(t => t.id === currentTournament.id);
-
-            if (index !== -1) {
-                tournaments[index] = currentTournament;
-                StorageManager.saveTournaments(user.id, tournaments);
+            try {
+                const user = await SupabaseManager.getCurrentUser();
+                await SupabaseManager.saveTournament(user.id, currentTournament);
+            } catch (error) {
+                console.error('Erro ao salvar torneio:', error);
+                showToast('Erro', 'Erro ao salvar torneio!', 'error');
             }
         }
 
-        function deleteTournament(tournamentId) {
+        async function deleteTournament(tournamentId) {
             if (!confirm('⚠️ Tem certeza que deseja excluir este torneio?\n\nEsta ação não pode ser desfeita.')) {
                 return;
             }
 
-            const user = StorageManager.getCurrentUser();
-            let tournaments = StorageManager.getTournaments(user.id);
-            tournaments = tournaments.filter(t => t.id !== tournamentId);
-            StorageManager.saveTournaments(user.id, tournaments);
+            showLoading('Excluindo torneio...');
 
-            showToast('Sucesso', 'Torneio excluído com sucesso!', 'success');
-            loadTournaments();
-            updateStats();
+            try {
+                const user = await SupabaseManager.getCurrentUser();
+                await SupabaseManager.deleteTournament(user.id, tournamentId);
+
+                showToast('Sucesso', 'Torneio excluído com sucesso!', 'success');
+                await loadTournaments();
+                updateStats();
+            } catch (error) {
+                console.error('Erro ao excluir torneio:', error);
+                showToast('Erro', 'Erro ao excluir torneio!', 'error');
+            } finally {
+                hideLoading();
+            }
         }
 
         // ==================== TOURNAMENT DETAIL VIEWS ====================
@@ -5008,37 +5293,51 @@
 
         // ==================== PROFILE ====================
 
-        function loadProfile() {
-            const user = StorageManager.getCurrentUser();
+        async function loadProfile() {
+            const user = await SupabaseManager.getCurrentUser();
             if (!user) return;
 
-            document.getElementById('profileName').value = user.name;
+            document.getElementById('profileName').value = user.name || '';
             document.getElementById('profileEmail').value = user.email;
             document.getElementById('profilePhone').value = user.phone || '';
             document.getElementById('profileOrganization').value = user.organization || '';
         }
 
-        function updateProfile(event) {
+        async function updateProfile(event) {
             event.preventDefault();
 
-            const user = StorageManager.getCurrentUser();
-            if (!user) return;
+            showLoading('Atualizando perfil...');
 
-            user.name = document.getElementById('profileName').value;
-            user.phone = document.getElementById('profilePhone').value;
-            user.organization = document.getElementById('profileOrganization').value;
+            try {
+                const user = await SupabaseManager.getCurrentUser();
+                if (!user) {
+                    hideLoading();
+                    return;
+                }
 
-            StorageManager.updateUser(user);
-            document.getElementById('userName').textContent = user.name;
+                const updates = {
+                    name: document.getElementById('profileName').value,
+                    phone: document.getElementById('profilePhone').value,
+                    organization: document.getElementById('profileOrganization').value
+                };
 
-            showToast('Sucesso', 'Perfil atualizado com sucesso!', 'success');
+                await SupabaseManager.updateProfile(user.id, updates);
+                document.getElementById('userName').textContent = updates.name;
+
+                showToast('Sucesso', 'Perfil atualizado com sucesso!', 'success');
+            } catch (error) {
+                console.error('Erro ao atualizar perfil:', error);
+                showToast('Erro', 'Erro ao atualizar perfil!', 'error');
+            } finally {
+                hideLoading();
+            }
         }
 
-        function updateStats() {
-            const user = StorageManager.getCurrentUser();
+        async function updateStats() {
+            const user = await SupabaseManager.getCurrentUser();
             if (!user) return;
 
-            const tournaments = StorageManager.getTournaments(user.id);
+            const tournaments = await SupabaseManager.getTournaments(user.id);
             const container = document.getElementById('dashboardContent');
 
             if (tournaments.length === 0) {
@@ -5186,11 +5485,21 @@
 
         // ==================== INITIALIZATION ====================
 
-        window.addEventListener('load', () => {
-            const user = StorageManager.getCurrentUser();
+        window.addEventListener('load', async () => {
+            // Verificar se há sessão ativa do Supabase
+            if (useSupabase && supabaseClient) {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    await showMainApp();
+                    return;
+                }
+            }
+
+            // Fallback para localStorage
+            const user = await SupabaseManager.getCurrentUser();
 
             if (user) {
-                showMainApp();
+                await showMainApp();
             } else {
                 showAuthScreen();
             }
