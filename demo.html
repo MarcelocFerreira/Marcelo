@@ -1924,6 +1924,18 @@
         </div>
     </div>
 
+    <!-- Modal Player Profile -->
+    <div id="playerProfileModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <div class="modal-title">👤 Perfil do Jogador</div>
+                <button class="modal-close" onclick="closePlayerProfileModal()">×</button>
+            </div>
+
+            <div id="playerProfileContent"></div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10000;"></div>
 
@@ -2590,9 +2602,10 @@
                                         </div>
                                         <small>📅 ${availText}</small>
                                     </div>
-                                    <div style="display: flex; gap: 5px;">
-                                        <button class="btn btn-sm" onclick="editPlayerFromTournament(${p.id})" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">✏️ Editar</button>
-                                        <button class="btn btn-danger btn-xs" onclick="removePlayerFromTournament(${p.id})">🗑️ Remover</button>
+                                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                        <button class="btn btn-sm" onclick="showPlayerProfile(${p.id})" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" data-tooltip="Ver estatísticas">📊 Perfil</button>
+                                        <button class="btn btn-sm" onclick="editPlayerFromTournament(${p.id})" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);" data-tooltip="Editar dados">✏️ Editar</button>
+                                        <button class="btn btn-danger btn-xs" onclick="removePlayerFromTournament(${p.id})" data-tooltip="Remover jogador">🗑️ Remover</button>
                                     </div>
                                 </div>`;
                             }).join('')
@@ -2667,9 +2680,10 @@
                         </div>
                         <small>📅 ${availText}</small>
                     </div>
-                    <div style="display: flex; gap: 5px;">
-                        <button class="btn btn-sm" onclick="editPlayerFromTournament(${p.id})" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">✏️ Editar</button>
-                        <button class="btn btn-danger btn-xs" onclick="removePlayerFromTournament(${p.id})">🗑️ Remover</button>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <button class="btn btn-sm" onclick="showPlayerProfile(${p.id})" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" data-tooltip="Ver estatísticas">📊 Perfil</button>
+                        <button class="btn btn-sm" onclick="editPlayerFromTournament(${p.id})" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);" data-tooltip="Editar dados">✏️ Editar</button>
+                        <button class="btn btn-danger btn-xs" onclick="removePlayerFromTournament(${p.id})" data-tooltip="Remover jogador">🗑️ Remover</button>
                     </div>
                 </div>`;
             }).join('');
@@ -4004,6 +4018,205 @@
                 saveTournament();
                 displaySchedule();
             }
+        }
+
+        // ==================== PLAYER PROFILE ====================
+
+        function showPlayerProfile(playerId) {
+            const player = currentTournament.players.find(p => p.id === playerId);
+            if (!player) return;
+
+            // Calculate player statistics
+            const playerMatches = currentTournament.matches?.filter(m =>
+                m.player1.id === playerId || m.player2.id === playerId
+            ) || [];
+
+            const totalMatches = playerMatches.length;
+            const playedMatches = playerMatches.filter(m => m.result);
+            const totalPlayed = playedMatches.length;
+
+            let wins = 0;
+            let losses = 0;
+            let woWins = 0;
+            let medicalWins = 0;
+
+            playedMatches.forEach(m => {
+                if (m.result && m.result.winner) {
+                    if (m.result.winner.id === playerId) {
+                        wins++;
+                        if (m.result.type === 'wo') woWins++;
+                        if (m.result.type === 'medical') medicalWins++;
+                    } else {
+                        losses++;
+                    }
+                }
+            });
+
+            const winRate = totalPlayed > 0 ? Math.round((wins / totalPlayed) * 100) : 0;
+            const pendingMatches = totalMatches - totalPlayed;
+
+            // Group matches by category
+            const matchesByCategory = {};
+            playedMatches.forEach(m => {
+                const cat = m.category || 'Sem categoria';
+                if (!matchesByCategory[cat]) {
+                    matchesByCategory[cat] = { wins: 0, losses: 0 };
+                }
+                if (m.result.winner.id === playerId) {
+                    matchesByCategory[cat].wins++;
+                } else {
+                    matchesByCategory[cat].losses++;
+                }
+            });
+
+            // Player categories
+            const playerCategories = player.categories || (player.category ? [player.category] : []);
+            const categoriesBadges = playerCategories.map(cat =>
+                `<span class="badge badge-info" style="margin-right: 5px;">${cat}</span>`
+            ).join('');
+
+            // Availability display
+            const availByDay = {};
+            player.availability?.forEach(a => {
+                if (!availByDay[a.dayLabel]) availByDay[a.dayLabel] = [];
+                availByDay[a.dayLabel].push(`${a.startTime}-${a.endTime}`);
+            });
+            const availText = Object.entries(availByDay)
+                .map(([day, periods]) => `${day} (${periods.join(', ')})`)
+                .join('; ') || 'Não informado';
+
+            const content = `
+                <div style="padding: 20px 0;">
+                    <!-- Player Header -->
+                    <div style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white;">
+                        <div style="font-size: 3em; margin-bottom: 10px;">👤</div>
+                        <h2 style="margin: 0; color: white;">${player.name}</h2>
+                        <div style="margin-top: 10px;">
+                            ${categoriesBadges}
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="dashboard-grid" style="margin-bottom: 30px;">
+                        <div class="chart-card">
+                            <div class="chart-title">🎯 Total de Jogos</div>
+                            <div class="stat-number">${totalMatches}</div>
+                            <div class="stat-label">Agendados</div>
+                        </div>
+
+                        <div class="chart-card">
+                            <div class="chart-title">✅ Jogos Realizados</div>
+                            <div class="stat-number">${totalPlayed}</div>
+                            <div class="stat-label">Finalizados</div>
+                        </div>
+
+                        <div class="chart-card">
+                            <div class="chart-title">🏆 Vitórias</div>
+                            <div class="stat-number" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${wins}</div>
+                            <div class="stat-label">Total de vitórias</div>
+                        </div>
+
+                        <div class="chart-card">
+                            <div class="chart-title">📉 Derrotas</div>
+                            <div class="stat-number" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${losses}</div>
+                            <div class="stat-label">Total de derrotas</div>
+                        </div>
+
+                        <div class="chart-card" style="grid-column: span 2;">
+                            <div class="chart-title">📊 Taxa de Vitória</div>
+                            <div class="stat-number">${winRate}%</div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: ${winRate}%; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                                    ${winRate}%
+                                </div>
+                            </div>
+                        </div>
+
+                        ${pendingMatches > 0 ? `
+                            <div class="chart-card">
+                                <div class="chart-title">⏳ Pendentes</div>
+                                <div class="stat-number">${pendingMatches}</div>
+                                <div class="stat-label">A jogar</div>
+                            </div>
+                        ` : ''}
+
+                        ${woWins > 0 || medicalWins > 0 ? `
+                            <div class="chart-card">
+                                <div class="chart-title">🎁 Vitórias Especiais</div>
+                                ${woWins > 0 ? `<div>🚫 W.O.: <strong>${woWins}</strong></div>` : ''}
+                                ${medicalWins > 0 ? `<div>🏥 Médica: <strong>${medicalWins}</strong></div>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Performance by Category -->
+                    ${Object.keys(matchesByCategory).length > 0 ? `
+                        <div class="chart-card" style="margin-bottom: 20px;">
+                            <div class="chart-title">📈 Performance por Categoria</div>
+                            ${Object.entries(matchesByCategory).map(([cat, stats]) => {
+                                const total = stats.wins + stats.losses;
+                                const winPct = total > 0 ? Math.round((stats.wins / total) * 100) : 0;
+                                return `
+                                    <div style="margin-bottom: 15px;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                            <span><strong>${cat}</strong></span>
+                                            <span>${stats.wins}V - ${stats.losses}D (${winPct}%)</span>
+                                        </div>
+                                        <div class="progress-bar-container" style="height: 20px;">
+                                            <div class="progress-bar" style="width: ${winPct}%; font-size: 0.8em;">
+                                                ${winPct}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : ''}
+
+                    <!-- Match History -->
+                    ${playedMatches.length > 0 ? `
+                        <div class="chart-card">
+                            <div class="chart-title">📜 Histórico de Partidas</div>
+                            <div style="max-height: 400px; overflow-y: auto;">
+                                ${playedMatches.slice().reverse().map(m => {
+                                    const isWinner = m.result.winner?.id === playerId;
+                                    const opponent = m.player1.id === playerId ? m.player2 : m.player1;
+                                    const bgColor = isWinner ? '#d4edda' : '#f8d7da';
+                                    const icon = isWinner ? '🏆' : '📉';
+
+                                    return `
+                                        <div style="padding: 12px; background: ${bgColor}; border-radius: 8px; margin-bottom: 10px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                                <span style="font-weight: 600;">${icon} vs ${opponent.name}</span>
+                                                <span class="badge ${isWinner ? 'badge-success' : 'badge-danger'}">${isWinner ? 'Vitória' : 'Derrota'}</span>
+                                            </div>
+                                            <div style="font-size: 0.9em; color: #666;">
+                                                <div>📊 ${m.result.displayText || `${m.result.player1Score} × ${m.result.player2Score}`}</div>
+                                                <div>📅 ${new Date(m.date + 'T00:00:00').toLocaleDateString('pt-BR')} • ⏰ ${m.time}</div>
+                                                <div>🏟️ ${m.court.name}${m.category ? ` • 🎯 ${m.category}` : ''}</div>
+                                                ${m.result.notes ? `<div style="margin-top: 5px; font-style: italic;">💬 ${m.result.notes}</div>` : ''}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Availability Info -->
+                    <div class="chart-card">
+                        <div class="chart-title">📅 Disponibilidade</div>
+                        <p style="line-height: 1.6;">${availText}</p>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('playerProfileContent').innerHTML = content;
+            document.getElementById('playerProfileModal').style.display = 'flex';
+        }
+
+        function closePlayerProfileModal() {
+            document.getElementById('playerProfileModal').style.display = 'none';
         }
 
         // ==================== EXPORT FUNCTIONS ====================
