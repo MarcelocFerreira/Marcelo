@@ -1609,10 +1609,14 @@
                     </div>
 
                     <h3>Jogadores Inscritos</h3>
-                    <div style="margin-bottom: 15px;">
+                    <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                         <button class="btn btn-success" onclick="showAddPlayerModal()">➕ Adicionar Jogador</button>
+                        ${!currentTournament.players || currentTournament.players.length === 0
+                            ? '<button class="btn" onclick="loadTestData()" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">🧪 Carregar Dados de Teste</button>'
+                            : ''
+                        }
                         ${currentTournament.groups?.length > 0 || currentTournament.bracket
-                            ? '<span class="alert alert-warning" style="display: inline-block; margin-left: 10px; padding: 8px 15px;">⚠️ Chaveamento já gerado. Ao adicionar jogadores, será necessário gerar novamente.</span>'
+                            ? '<span class="alert alert-warning" style="display: inline-block; padding: 8px 15px;">⚠️ Chaveamento já gerado. Ao adicionar jogadores, será necessário gerar novamente.</span>'
                             : ''
                         }
                     </div>
@@ -1639,7 +1643,10 @@
                                         </div>
                                         <small>📅 Disponível: ${availDays || 'Não informado'}</small>
                                     </div>
-                                    <button class="btn btn-danger btn-xs" onclick="removePlayerFromTournament(${p.id})">🗑️ Remover</button>
+                                    <div style="display: flex; gap: 5px;">
+                                        <button class="btn btn-sm" onclick="editPlayerFromTournament(${p.id})" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">✏️ Editar</button>
+                                        <button class="btn btn-danger btn-xs" onclick="removePlayerFromTournament(${p.id})">🗑️ Remover</button>
+                                    </div>
                                 </div>`;
                             }).join('')
                             : '<p>Nenhum jogador cadastrado</p>'
@@ -1656,7 +1663,13 @@
 
         // ==================== PLAYER MANAGEMENT IN TOURNAMENT ====================
 
+        let editingPlayerId = null; // Track if editing
+
         function showAddPlayerModal() {
+            editingPlayerId = null;
+            document.querySelector('#addPlayerModal .modal-title').textContent = '➕ Adicionar Jogador';
+            document.querySelector('#addPlayerModal button[type="submit"]').textContent = '✅ Adicionar Jogador';
+
             // Populate categories as checkboxes
             const categoriesContainer = document.getElementById('modalPlayerCategories');
             categoriesContainer.innerHTML = currentTournament.categories.map(cat => `
@@ -1682,6 +1695,53 @@
                     </div>
                 </div>
             `).join('');
+
+            // Show modal
+            document.getElementById('addPlayerModal').classList.add('active');
+        }
+
+        function editPlayerFromTournament(playerId) {
+            const player = currentTournament.players.find(p => p.id === playerId);
+            if (!player) return;
+
+            editingPlayerId = playerId;
+            document.querySelector('#addPlayerModal .modal-title').textContent = '✏️ Editar Jogador';
+            document.querySelector('#addPlayerModal button[type="submit"]').textContent = '💾 Salvar Alterações';
+
+            // Populate categories as checkboxes
+            const categoriesContainer = document.getElementById('modalPlayerCategories');
+            const playerCategories = player.categories || (player.category ? [player.category] : []);
+            categoriesContainer.innerHTML = currentTournament.categories.map(cat => `
+                <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: #f5f5f5; border-radius: 6px;">
+                    <input type="checkbox" id="modalCat_${cat.replace(/\s+/g, '_')}" value="${cat}" ${playerCategories.includes(cat) ? 'checked' : ''}>
+                    <label for="modalCat_${cat.replace(/\s+/g, '_')}" style="margin: 0; cursor: pointer; font-weight: 500;">
+                        ${cat}
+                    </label>
+                </div>
+            `).join('');
+
+            // Fill name
+            document.getElementById('modalPlayerName').value = player.name;
+
+            // Create availability checkboxes
+            const availContainer = document.getElementById('modalPlayerAvailability');
+            availContainer.innerHTML = daysOfWeek.map(day => {
+                const dayAvail = player.availability?.find(a => a.day === day.id);
+                const isChecked = !!dayAvail;
+
+                return `
+                    <div class="availability-item">
+                        <input type="checkbox" id="modalPlayer_${day.id}" ${isChecked ? 'checked' : ''} onchange="toggleModalDayAvailability('${day.id}')">
+                        <label for="modalPlayer_${day.id}" style="margin: 0; cursor: pointer;">${day.label}</label>
+                    </div>
+                    <div id="modalPlayer_${day.id}_times" class="${isChecked ? '' : 'hidden'}">
+                        <div class="time-inputs">
+                            <input type="time" id="modalPlayer_${day.id}_start" value="${dayAvail?.startTime || '08:00'}">
+                            <input type="time" id="modalPlayer_${day.id}_end" value="${dayAvail?.endTime || '18:00'}">
+                        </div>
+                    </div>
+                `;
+            }).join('');
 
             // Show modal
             document.getElementById('addPlayerModal').classList.add('active');
@@ -1750,19 +1810,41 @@
                 }
             });
 
-            // Create new player
-            const newPlayer = {
-                id: Date.now(), // Use timestamp as unique ID
-                name,
-                categories: selectedCategories, // Array of categories
-                availability
-            };
+            if (editingPlayerId !== null) {
+                // EDITING existing player
+                const player = currentTournament.players.find(p => p.id === editingPlayerId);
+                if (player) {
+                    player.name = name;
+                    player.categories = selectedCategories;
+                    player.availability = availability;
 
-            // Add to tournament
-            if (!currentTournament.players) {
-                currentTournament.players = [];
+                    const catText = selectedCategories.length > 1
+                        ? `${selectedCategories.length} categorias (${selectedCategories.join(', ')})`
+                        : selectedCategories[0];
+
+                    alert(`✅ Jogador ${name} atualizado com sucesso!\n\nCategorias: ${catText}`);
+                }
+            } else {
+                // ADDING new player
+                const newPlayer = {
+                    id: Date.now(), // Use timestamp as unique ID
+                    name,
+                    categories: selectedCategories, // Array of categories
+                    availability
+                };
+
+                // Add to tournament
+                if (!currentTournament.players) {
+                    currentTournament.players = [];
+                }
+                currentTournament.players.push(newPlayer);
+
+                const catText = selectedCategories.length > 1
+                    ? `${selectedCategories.length} categorias (${selectedCategories.join(', ')})`
+                    : selectedCategories[0];
+
+                alert(`✅ Jogador ${name} adicionado com sucesso em ${catText}!`);
             }
-            currentTournament.players.push(newPlayer);
 
             // Save tournament
             saveTournament();
@@ -1772,12 +1854,6 @@
 
             // Refresh view
             renderTournamentOverview();
-
-            const catText = selectedCategories.length > 1
-                ? `${selectedCategories.length} categorias (${selectedCategories.join(', ')})`
-                : selectedCategories[0];
-
-            alert(`✅ Jogador ${name} adicionado com sucesso em ${catText}!`);
         }
 
         function removePlayerFromTournament(playerId) {
@@ -1812,6 +1888,111 @@
             renderTournamentOverview();
 
             alert(`✅ Jogador ${player.name} removido com sucesso!`);
+        }
+
+        // ==================== TEST DATA ====================
+
+        function loadTestData() {
+            if (!confirm('🧪 Carregar dados de teste?\n\nIsso irá adicionar:\n• 20 jogadores em múltiplas categorias\n• 3 quadras\n• Gerar chaveamento automaticamente\n\nContinuar?')) {
+                return;
+            }
+
+            // Test players with multiple categories
+            const testPlayers = [
+                { name: 'João Silva', categories: ['Iniciantes', '5ª Classe'], days: ['monday', 'wednesday', 'friday'] },
+                { name: 'Maria Santos', categories: ['Iniciantes', '5ª Classe'], days: ['monday', 'wednesday', 'saturday'] },
+                { name: 'Pedro Costa', categories: ['Iniciantes'], days: ['tuesday', 'thursday', 'saturday'] },
+                { name: 'Ana Oliveira', categories: ['Iniciantes'], days: ['monday', 'wednesday', 'friday'] },
+
+                { name: 'Carlos Ferreira', categories: ['5ª Classe', '4ª Classe'], days: ['monday', 'wednesday', 'friday'] },
+                { name: 'Juliana Lima', categories: ['5ª Classe'], days: ['tuesday', 'thursday', 'saturday'] },
+                { name: 'Roberto Alves', categories: ['5ª Classe'], days: ['monday', 'wednesday', 'friday'] },
+                { name: 'Fernanda Souza', categories: ['5ª Classe'], days: ['tuesday', 'thursday'] },
+
+                { name: 'Paulo Mendes', categories: ['4ª Classe', '3ª Classe'], days: ['monday', 'wednesday', 'friday'] },
+                { name: 'Mariana Rocha', categories: ['4ª Classe'], days: ['tuesday', 'thursday', 'saturday'] },
+                { name: 'Ricardo Dias', categories: ['4ª Classe'], days: ['monday', 'friday'] },
+                { name: 'Camila Ribeiro', categories: ['4ª Classe'], days: ['wednesday', 'saturday'] },
+
+                { name: 'André Martins', categories: ['3ª Classe', '2ª Classe'], days: ['monday', 'wednesday', 'friday'] },
+                { name: 'Patricia Gomes', categories: ['3ª Classe'], days: ['tuesday', 'thursday'] },
+                { name: 'Felipe Barbosa', categories: ['3ª Classe'], days: ['monday', 'saturday'] },
+                { name: 'Larissa Castro', categories: ['3ª Classe'], days: ['wednesday', 'friday'] },
+
+                { name: 'Gabriel Pinto', categories: ['2ª Classe', '1ª Classe'], days: ['monday', 'wednesday', 'friday'] },
+                { name: 'Beatriz Cardoso', categories: ['2ª Classe'], days: ['tuesday', 'thursday', 'saturday'] },
+                { name: 'Lucas Nunes', categories: ['1ª Classe', 'Pro Classe'], days: ['monday', 'wednesday', 'friday'] },
+                { name: 'Rafaela Teixeira', categories: ['Pro Classe'], days: ['tuesday', 'thursday', 'saturday'] }
+            ];
+
+            // Add players to tournament
+            testPlayers.forEach((tp, index) => {
+                const availability = tp.days.map(dayId => {
+                    const day = daysOfWeek.find(d => d.id === dayId);
+                    return {
+                        day: dayId,
+                        dayLabel: day.label,
+                        startTime: '09:00',
+                        endTime: '21:00'
+                    };
+                });
+
+                currentTournament.players.push({
+                    id: Date.now() + index,
+                    name: tp.name,
+                    categories: tp.categories,
+                    availability
+                });
+            });
+
+            // Add test courts
+            const testCourts = [
+                {
+                    id: courtCounter++,
+                    name: 'Quadra Central',
+                    availability: [
+                        { day: 'monday', dayLabel: 'Segunda', startTime: '08:00', endTime: '22:00' },
+                        { day: 'tuesday', dayLabel: 'Terça', startTime: '08:00', endTime: '22:00' },
+                        { day: 'wednesday', dayLabel: 'Quarta', startTime: '08:00', endTime: '22:00' },
+                        { day: 'thursday', dayLabel: 'Quinta', startTime: '08:00', endTime: '22:00' },
+                        { day: 'friday', dayLabel: 'Sexta', startTime: '08:00', endTime: '22:00' },
+                        { day: 'saturday', dayLabel: 'Sábado', startTime: '08:00', endTime: '20:00' },
+                        { day: 'sunday', dayLabel: 'Domingo', startTime: '09:00', endTime: '18:00' }
+                    ]
+                },
+                {
+                    id: courtCounter++,
+                    name: 'Quadra 2',
+                    availability: [
+                        { day: 'monday', dayLabel: 'Segunda', startTime: '08:00', endTime: '22:00' },
+                        { day: 'tuesday', dayLabel: 'Terça', startTime: '08:00', endTime: '22:00' },
+                        { day: 'wednesday', dayLabel: 'Quarta', startTime: '08:00', endTime: '22:00' },
+                        { day: 'thursday', dayLabel: 'Quinta', startTime: '08:00', endTime: '22:00' },
+                        { day: 'friday', dayLabel: 'Sexta', startTime: '08:00', endTime: '22:00' },
+                        { day: 'saturday', dayLabel: 'Sábado', startTime: '08:00', endTime: '20:00' }
+                    ]
+                },
+                {
+                    id: courtCounter++,
+                    name: 'Quadra 3',
+                    availability: [
+                        { day: 'monday', dayLabel: 'Segunda', startTime: '14:00', endTime: '22:00' },
+                        { day: 'wednesday', dayLabel: 'Quarta', startTime: '14:00', endTime: '22:00' },
+                        { day: 'friday', dayLabel: 'Sexta', startTime: '14:00', endTime: '22:00' },
+                        { day: 'saturday', dayLabel: 'Sábado', startTime: '08:00', endTime: '20:00' }
+                    ]
+                }
+            ];
+
+            currentTournament.courts = testCourts;
+
+            // Save tournament
+            saveTournament();
+
+            // Refresh view
+            renderTournamentOverview();
+
+            alert(`✅ Dados de teste carregados!\n\n👥 ${testPlayers.length} jogadores adicionados\n🏟️ ${testCourts.length} quadras configuradas\n\nAgora vá para a aba "Chaveamento" para gerar os grupos!`);
         }
 
         // ==================== COURTS MANAGEMENT ====================
@@ -2250,6 +2431,7 @@
                                 id: `match_${matchId++}`,
                                 groupId: group.id,
                                 groupName: group.name,
+                                category: group.category, // Add category
                                 player1: players[i],
                                 player2: players[j],
                                 scheduled: false,
@@ -2263,8 +2445,34 @@
                 });
             }
 
-            // Generate elimination matches (only first round with known players)
-            if (currentTournament.bracket && currentTournament.format === 'Eliminatórias') {
+            // Generate elimination matches (NEW: support brackets object per category)
+            if (currentTournament.brackets && currentTournament.format === 'Eliminatórias') {
+                Object.keys(currentTournament.brackets).forEach(category => {
+                    const bracket = currentTournament.brackets[category];
+                    if (bracket && bracket.rounds && bracket.rounds[0]) {
+                        bracket.rounds[0].forEach(bracketMatch => {
+                            if (bracketMatch.player1 && bracketMatch.player2) {
+                                matches.push({
+                                    id: `match_${matchId++}`,
+                                    bracketMatchId: bracketMatch.id,
+                                    category: category,
+                                    round: bracketMatch.round,
+                                    player1: bracketMatch.player1,
+                                    player2: bracketMatch.player2,
+                                    scheduled: false,
+                                    court: null,
+                                    date: null,
+                                    time: null,
+                                    result: null
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Backward compatibility: OLD single bracket
+            if (currentTournament.bracket && currentTournament.format === 'Eliminatórias' && !currentTournament.brackets) {
                 currentTournament.bracket.rounds[0].forEach(bracketMatch => {
                     if (bracketMatch.player1 && bracketMatch.player2) {
                         matches.push({
@@ -2485,8 +2693,9 @@
                             <div class="match-info">
                                 <span>⏰ ${match.time}</span>
                                 <span>🏟️ ${match.court.name}</span>
+                                ${match.category ? `<span>🎯 ${match.category}</span>` : ''}
                                 ${match.groupName ? `<span>🏆 ${match.groupName}</span>` : ''}
-                                ${match.round ? `<span>🎯 Rodada ${match.round}</span>` : ''}
+                                ${match.round ? `<span>📍 Rodada ${match.round}</span>` : ''}
                             </div>
                         </div>
                     `;
