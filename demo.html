@@ -3565,12 +3565,13 @@
                         </ul>
                     </div>
 
-                    <div style="margin-bottom: 20px;">
-                        <button class="btn" onclick="runAutoScheduling()">🤖 Agendar Automaticamente</button>
-                        ${currentTournament.matches?.length > 0
-                            ? '<button class="btn btn-secondary" onclick="clearSchedule()">🗑️ Limpar Agenda</button>'
-                            : ''
-                        }
+                    <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn" onclick="runAutoScheduling()" data-tooltip="Criar agenda automaticamente">🤖 Agendar Automaticamente</button>
+                        ${currentTournament.matches?.length > 0 ? `
+                            <button class="btn btn-secondary" onclick="clearSchedule()" data-tooltip="Remover todos os jogos">🗑️ Limpar Agenda</button>
+                            <button class="btn" onclick="exportToICS()" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);" data-tooltip="Exportar para Google Calendar, Outlook, etc.">📅 Exportar Calendário (.ics)</button>
+                            <button class="btn" onclick="exportToCSV()" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);" data-tooltip="Exportar planilha Excel">📊 Exportar CSV</button>
+                        ` : ''}
                     </div>
 
                     <div id="scheduleDisplay"></div>
@@ -4003,6 +4004,106 @@
                 saveTournament();
                 displaySchedule();
             }
+        }
+
+        // ==================== EXPORT FUNCTIONS ====================
+
+        function exportToICS() {
+            if (!currentTournament.matches || currentTournament.matches.length === 0) {
+                showToast('Erro', 'Nenhum jogo agendado para exportar!', 'error');
+                return;
+            }
+
+            // Create ICS file content
+            let icsContent = 'BEGIN:VCALENDAR\n';
+            icsContent += 'VERSION:2.0\n';
+            icsContent += 'PRODID:-//SportSchedule//Tournament Scheduler//PT\n';
+            icsContent += `CALSCALE:GREGORIAN\n`;
+            icsContent += `X-WR-CALNAME:${currentTournament.name}\n`;
+            icsContent += `X-WR-TIMEZONE:America/Sao_Paulo\n\n`;
+
+            currentTournament.matches.forEach((match, index) => {
+                const startDate = new Date(match.date + 'T' + match.time + ':00');
+                const endDate = new Date(startDate.getTime() + currentTournament.duration * 60000);
+
+                // Format dates in ICS format (YYYYMMDDTHHMMSS)
+                const formatICSDate = (date) => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    const seconds = String(date.getSeconds()).padStart(2, '0');
+                    return `${year}${month}${day}T${hours}${minutes}${seconds}`;
+                };
+
+                const uid = `match-${index}-${Date.now()}@sportschedule.com`;
+                const summary = `${match.player1.name} vs ${match.player2.name}`;
+                const location = match.court.name;
+                const description = `Torneio: ${currentTournament.name}\\n`;
+                const categoryInfo = match.category ? `Categoria: ${match.category}\\n` : '';
+                const groupInfo = match.groupName ? `Grupo: ${match.groupName}\\n` : '';
+
+                icsContent += 'BEGIN:VEVENT\n';
+                icsContent += `UID:${uid}\n`;
+                icsContent += `DTSTAMP:${formatICSDate(new Date())}\n`;
+                icsContent += `DTSTART:${formatICSDate(startDate)}\n`;
+                icsContent += `DTEND:${formatICSDate(endDate)}\n`;
+                icsContent += `SUMMARY:${summary}\n`;
+                icsContent += `LOCATION:${location}\n`;
+                icsContent += `DESCRIPTION:${description}${categoryInfo}${groupInfo}Quadra: ${location}\n`;
+                icsContent += `STATUS:CONFIRMED\n`;
+                icsContent += 'END:VEVENT\n\n';
+            });
+
+            icsContent += 'END:VCALENDAR';
+
+            // Download file
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${currentTournament.name.replace(/[^a-z0-9]/gi, '_')}_agenda.ics`;
+            link.click();
+
+            showToast('Sucesso', 'Calendário exportado! Importe no Google Calendar, Outlook ou Apple Calendar.', 'success');
+        }
+
+        function exportToCSV() {
+            if (!currentTournament.matches || currentTournament.matches.length === 0) {
+                showToast('Erro', 'Nenhum jogo agendado para exportar!', 'error');
+                return;
+            }
+
+            // Create CSV content
+            let csvContent = 'Data,Horário,Jogador 1,Jogador 2,Quadra,Categoria,Grupo,Resultado,Observações\n';
+
+            currentTournament.matches.forEach(match => {
+                const date = new Date(match.date + 'T00:00:00').toLocaleDateString('pt-BR');
+                const time = match.time;
+                const player1 = match.player1.name.replace(/,/g, ' ');
+                const player2 = match.player2.name.replace(/,/g, ' ');
+                const court = match.court.name.replace(/,/g, ' ');
+                const category = (match.category || '').replace(/,/g, ' ');
+                const group = (match.groupName || '').replace(/,/g, ' ');
+
+                let result = '';
+                let notes = '';
+                if (match.result) {
+                    result = (match.result.displayText || `${match.result.player1Score} × ${match.result.player2Score}`).replace(/,/g, ' ');
+                    notes = (match.result.notes || '').replace(/,/g, ' ').replace(/\n/g, ' ');
+                }
+
+                csvContent += `${date},${time},${player1},${player2},${court},${category},${group},"${result}","${notes}"\n`;
+            });
+
+            // Download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${currentTournament.name.replace(/[^a-z0-9]/gi, '_')}_agenda.csv`;
+            link.click();
+
+            showToast('Sucesso', 'Planilha CSV exportada! Abra no Excel ou Google Sheets.', 'success');
         }
 
         // ==================== CONFLICTS MANAGEMENT ====================
