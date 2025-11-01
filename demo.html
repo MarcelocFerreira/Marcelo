@@ -1097,6 +1097,71 @@
             color: #aaa;
         }
 
+        /* Search Box */
+        .search-box {
+            position: relative;
+            margin: 15px 0;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 40px 12px 40px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .search-clear:hover {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .dark-mode .search-box input {
+            background: #1a4d7a;
+            border-color: #2a5d8a;
+            color: #eee;
+        }
+
+        .dark-mode .search-box input:focus {
+            border-color: #667eea;
+        }
+
         @media (max-width: 768px) {
             .tournament-grid {
                 grid-template-columns: 1fr;
@@ -1214,6 +1279,9 @@
             <button class="tab" onclick="showTab('createTournament')">➕ Criar Torneio</button>
             <button class="tab" onclick="showTab('profile')">👤 Perfil</button>
         </div>
+
+        <!-- Breadcrumbs -->
+        <div id="breadcrumbs" class="breadcrumbs"></div>
 
         <!-- Tournament Detail Tabs (Hidden by default) -->
         <div class="tabs hidden" id="tournamentTabs">
@@ -1522,6 +1590,29 @@
             document.getElementById('themeIcon').textContent = '☀️';
         }
 
+        // ==================== BREADCRUMBS ====================
+        function updateBreadcrumbs(items) {
+            const container = document.getElementById('breadcrumbs');
+            if (!items || items.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = items.map((item, index) => {
+                const isLast = index === items.length - 1;
+                if (isLast) {
+                    return `<span class="breadcrumb-item">${item.label}</span>`;
+                } else {
+                    return `
+                        <div class="breadcrumb-item">
+                            <a href="#" class="breadcrumb-link" onclick="${item.onClick}; return false;">${item.label}</a>
+                            <span class="breadcrumb-separator">›</span>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
         const daysOfWeek = [
             {id: 'monday', label: 'Segunda'},
             {id: 'tuesday', label: 'Terça'},
@@ -1669,6 +1760,12 @@
             document.getElementById('userName').textContent = user.name;
             document.getElementById('userEmail').textContent = user.email;
 
+            // Initialize breadcrumbs
+            updateBreadcrumbs([
+                { label: '🏠 Home', onClick: "showTab('myTournaments')" },
+                { label: '🏆 Meus Torneios' }
+            ]);
+
             loadTournaments();
             loadProfile();
             updateStats();
@@ -1694,6 +1791,17 @@
 
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
+
+            // Update breadcrumbs
+            const breadcrumbLabels = {
+                'myTournaments': '🏆 Meus Torneios',
+                'createTournament': '➕ Criar Torneio',
+                'profile': '👤 Perfil'
+            };
+            updateBreadcrumbs([
+                { label: '🏠 Home', onClick: "showTab('myTournaments')" },
+                { label: breadcrumbLabels[tabName] || tabName }
+            ]);
 
             if (tabName === 'myTournaments') {
                 loadTournaments();
@@ -1923,6 +2031,24 @@
             tournamentTabs.forEach(tab => tab.classList.remove('active'));
             event.target.classList.add('active');
 
+            // Update breadcrumbs
+            const tabLabels = {
+                'overview': '📊 Visão Geral',
+                'courts': '🏟️ Quadras',
+                'bracket': '🏆 Chaveamento',
+                'schedule': '📅 Agenda',
+                'conflicts': '⚠️ Conflitos',
+                'results': '📊 Resultados',
+                'standings': '🏅 Classificação'
+            };
+            if (currentTournament) {
+                updateBreadcrumbs([
+                    { label: '🏠 Home', onClick: "closeTournamentDetail()" },
+                    { label: currentTournament.name, onClick: "showTournamentTab('overview')" },
+                    { label: tabLabels[tabName] || tabName }
+                ]);
+            }
+
             // Show selected tab content
             const contentMap = {
                 'overview': renderTournamentOverview,
@@ -2012,7 +2138,13 @@
                             : ''
                         }
                     </div>
-                    <div class="tournament-info" style="margin-bottom: 15px;">
+                    ${currentTournament.players && currentTournament.players.length > 0 ? `
+                        <div class="search-box">
+                            <input type="text" id="playerSearchInput" placeholder="Buscar jogador por nome ou categoria..." oninput="filterPlayers(this.value)">
+                            <button class="search-clear" id="playerSearchClear" onclick="clearPlayerSearch()">×</button>
+                        </div>
+                    ` : ''}
+                    <div class="tournament-info" style="margin-bottom: 15px;" id="playersListContainer">
                         ${currentTournament.players && currentTournament.players.length > 0
                             ? currentTournament.players.map((p, i) => {
                                 // Group availability by day
@@ -2057,6 +2189,84 @@
                     ` : ''}
                 </div>
             `;
+        }
+
+        // ==================== PLAYER SEARCH/FILTER ====================
+
+        function filterPlayers(searchTerm) {
+            const container = document.getElementById('playersListContainer');
+            const searchClearBtn = document.getElementById('playerSearchClear');
+
+            if (!container) return;
+
+            // Show/hide clear button
+            if (searchTerm.trim()) {
+                searchClearBtn.style.display = 'flex';
+            } else {
+                searchClearBtn.style.display = 'none';
+            }
+
+            const term = searchTerm.toLowerCase().trim();
+
+            // Filter players
+            const filteredPlayers = currentTournament.players.filter(p => {
+                const name = p.name.toLowerCase();
+                const playerCategories = p.categories || (p.category ? [p.category] : []);
+                const categories = playerCategories.map(c => c.toLowerCase()).join(' ');
+
+                return name.includes(term) || categories.includes(term);
+            });
+
+            // Render filtered players
+            if (filteredPlayers.length === 0) {
+                container.innerHTML = '<p>Nenhum jogador encontrado</p>';
+                return;
+            }
+
+            container.innerHTML = filteredPlayers.map((p, i) => {
+                // Group availability by day
+                const availByDay = {};
+                p.availability?.forEach(a => {
+                    if (!availByDay[a.dayLabel]) availByDay[a.dayLabel] = [];
+                    availByDay[a.dayLabel].push(`${a.startTime}-${a.endTime}`);
+                });
+                const availText = Object.entries(availByDay)
+                    .map(([day, periods]) => `${day} (${periods.join(', ')})`)
+                    .join('; ') || 'Não informado';
+
+                // Handle both old (category) and new (categories) formats
+                const playerCategories = p.categories || (p.category ? [p.category] : []);
+                const categoriesBadges = playerCategories.map(cat =>
+                    `<span class="badge badge-info" style="margin-right: 5px;">${cat}</span>`
+                ).join('');
+
+                return `<div style="padding: 10px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1;">
+                        <div style="margin-bottom: 5px;">
+                            <strong>${p.name}</strong>
+                        </div>
+                        <div style="margin-bottom: 5px;">
+                            ${categoriesBadges}
+                        </div>
+                        <small>📅 ${availText}</small>
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn btn-sm" onclick="editPlayerFromTournament(${p.id})" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">✏️ Editar</button>
+                        <button class="btn btn-danger btn-xs" onclick="removePlayerFromTournament(${p.id})">🗑️ Remover</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function clearPlayerSearch() {
+            const searchInput = document.getElementById('playerSearchInput');
+            const searchClearBtn = document.getElementById('playerSearchClear');
+
+            if (searchInput) {
+                searchInput.value = '';
+                searchClearBtn.style.display = 'none';
+                filterPlayers('');
+            }
         }
 
         // ==================== PLAYER MANAGEMENT IN TOURNAMENT ====================
